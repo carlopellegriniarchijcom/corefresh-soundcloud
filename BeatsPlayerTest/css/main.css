@@ -344,13 +344,13 @@ main {
 }
 
 #splash-content > div {
-	width: 64px;
-	height: 43px;
+	width: 128px;
+	height: 86px;
   position: fixed;
   top: 50%;
   left: 50%;
-  margin-top: -21.5px;
-  margin-left: -32px;
+  margin-top: -43px;
+  margin-left: -64px;
   background-image: url('../img/soundcloud_logo.png');
   background-repeat: none;
   background-attachment: scroll;
@@ -367,10 +367,10 @@ main {
        only screen and (min-resolution: 144dpi)
 {
 	#splash-content > div {
-	  width: 128px;
-	  height: 86px;
-	  margin-top: -43px;
-	  margin-left: -64px;
+	  width: 256px;
+	  height: 172px;
+	  margin-top: -86px;
+	  margin-left: -128px;
 	  background-image: url('../img/soundcloud_logo-retina.png');
 	}
 }
