@@ -1,0 +1,20 @@
+<article class="sound-cloud-profile">
+  <header>
+    <hgroup>
+      <h2 class="profile-avatar"><img src="{{ current_profile.avatar_url }}" alt=""></h2>
+      <h3 class="profile-fullname">{{ current_profile.full_name }}</h3>
+    </hgroup>
+  </header>
+  <section class="profile-body">
+    <ul class="profile-details">
+      <li>{{ current_profile.city }},&nbsp;{{ current_profile.country }}</li>
+      <li>Track Count:&nbsp;{{ current_profile.track_count }}</li>
+      <li>Set Count:&nbsp;{{ current_profile.playlist_count }}</li> 
+    </ul>
+    <p>{{ current_profile.description }}</p>
+    <ul class="profile-track-list" ng-repeat="track in current_profile.tracks">
+      <li class="playable">{{ track.title }}</li>  
+    </ul>
+  </section>
+  
+</article>

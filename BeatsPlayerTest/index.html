@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]>    <html class="no-js iem7" lang="en"> <![endif]-->
+<!--[if (gt IEMobile 7)|!(IEMobile)]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <title>SoundCloud Surfer</title>
+        <meta name="description" content="HTML5 Audio Player, and SoundCloud profile browser for Aaron Stephanus's application for employment with Beats Music.">
+        <meta name="HandheldFriendly" content="True">
+        <meta name="MobileOptimized" content="320">
+        <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+        <meta http-equiv="cleartype" content="on">
+        <!--[if lt IE 10]>
+          <meta http-equiv="X-UA-Compatible" content="IE-Edge,chrome=1" />
+        <![endif]-->
+        <link rel="author" href="humans.txt">
+        
+        <!-- Icons for iOS -->
+        <link rel="apple-touch-icon-precomposed" sizes="144x144" href="img/touch/apple-touch-icon-144x144-precomposed.png">
+        <link rel="apple-touch-icon-precomposed" sizes="114x114" href="img/touch/apple-touch-icon-114x114-precomposed.png">
+        <link rel="apple-touch-icon-precomposed" sizes="72x72" href="img/touch/apple-touch-icon-72x72-precomposed.png">
+        <link rel="apple-touch-icon-precomposed" href="img/touch/apple-touch-icon-57x57-precomposed.png">
+        <link rel="shortcut icon" href="img/touch/apple-touch-icon.png">
+ 
+        <!-- Tile icon for Win8 (144x144 + tile color) -->
+        <meta name="msapplication-TileImage" content="img/touch/apple-touch-icon-144x144-precomposed.png">
+        <meta name="msapplication-TileColor" content="#222222">
+ 
+
+        <!-- For iOS web apps. Delete if not needed. https://github.com/h5bp/mobile-boilerplate/issues/94 -->
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <meta name="apple-mobile-web-app-title" content="(λx.x (BeatsMusic))(SoundCloud AudioPlayer)">
+
+
+        <!-- This script prevents links from opening in Mobile Safari. https://gist.github.com/1042026 -->
+        <script>(function(a,b,c){if(c in b&&b[c]){var d,e=a.location,f=/^(a|html)$/i;a.addEventListener("click",function(a){d=a.target;while(!f.test(d.nodeName))d=d.parentNode;"href"in d&&(d.href.indexOf("http")||~d.href.indexOf(e.host))&&(a.preventDefault(),e.href=d.href)},!1)}})(document,window.navigator,"standalone")</script>
+
+        <link rel="stylesheet" href="css/normalize.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="js/jquery/jquery.mobile.custom.structure.css">
+        <link rel="stylesheet" href="js/jquery/jquery.mobile.custom.theme.css">
+        
+        <!-- It is recommended to include Modernizr in the head instead at the end of the body
+             because of the HTML5Shiv for old school IE, and to avoid any FOUC due to adding
+             CSS classes.
+             The jQuery Library, jQueryUI Library, and jQuery Mobile Library are best
+             kept in the head to avoid FOUC and enhancement of elements.
+        -->
+        <script src="js/modernizr.custom.js"></script>
+        <script src="js/jquery/jquery-1.9.1.js"></script>
+	      <script src="js/jquery/jquery-ui-1.9.2.js"></script>
+	      <script src="js/jquery/jquery.mobile.custom.js"></script>
+    </head>
+    <body>
+
+      <main>        
+        <div id="profile" data-role="page" data-theme="a">
+          <div data-role="header" data-position="fixed" data-id="site-header">
+            <h1>SoundCloud Surfer</h1>
+          </div>
+          <div id="profile-page-content" data-role="content">
+          
+            <!-- This bit is managed using Angular -->
+            <article class="sound-cloud-profile" ng-app="ngView">
+						  <header>
+						    <hgroup>
+						      <h2 class="profile-avatar"><img ng-src="{{current_profile.avatar_url}}" alt=""></h2>
+						      <h3 class="profile-fullname">{{current_profile.full_name}}</h3>
+						    </hgroup>
+						  </header>
+						  <section class="profile-body">
+						    <ul class="profile-details">
+						      <li>{{ current_profile.city }},&nbsp;{{ current_profile.country }}</li>
+						      <li>Track Count:&nbsp;{{ current_profile.track_count }}</li>
+						      <li>Set Count:&nbsp;{{ current_profile.playlist_count }}</li> 
+						    </ul>
+						    <p>{{ current_profile.description }}</p>
+						    <ol 
+						      data-role="listview" 
+						      data-inset="true"
+						      data-icon="arrow-r"
+						      data-theme="a" 
+						      ng-repeat="track in current_profile.tracks"
+						    >
+						      <!-- Tap/click on a list item displays the playback controls panel,
+						           and begins playback of the selected track, first stopping playback
+						           of any track that may be playing already.
+						      -->
+						      <li><a href="#" class="playable" data-track-id="{{track.id}}" title="{{track.title}}">{{track.title}}</a></li>
+						    </ol>
+						  </section>
+						  <section class="profile-connections">
+						    <div data-role="collapsible-set">
+						      <div data-role="collapsible" data-collapsed="true" data-theme="a" data-content-theme="c">
+						        <h4>Followers</h4>
+						        <ul
+						          data-role="listview"
+						          data-inset="true"
+						          data-icon="forward"
+						          data-theme="b"
+						        >
+						          <li ng-repeat="follower in current_profile.followers">
+						            <a 
+						              href="#" 
+						              class="friend-profile-link" 
+						              title="{{follower.full_name}}"
+						              ng-click="selectProfile(follower.id)"
+						            >
+						              <img ng-src="{{follower.avatar_url}}" alt=""><strong>{{follower.full_name}}</strong>
+						            </a>
+						          </li>
+						        </ul>
+						      </div>
+						      <div data-role="collapsible" data-collapsed="true">
+						        <h4>Following</h4>
+						        <ul
+						          data-role="listview"
+						          data-inset="true"
+						          data-icon="forward"
+						          data-theme="b"
+						        >
+						          <li ng-repeat="following in current_profile.followings">
+						            <a 
+						              href="#"
+						              class="friend-profile-link"
+						              title="{{following.full_name}}"
+						              ng-click="selectProfile(following.id)"
+						            >
+						              <img ng-src="{{following.avatar_url}}" alt=""><strong>{{following.full_name}}</strong>
+						            </a>
+						          </li>
+						        </ul>
+						      </div>
+						    </div>
+						  </section>
+						</article>
+          </div>
+          <div data-role="footer" data-position="fixed" data-id="site-footer">
+            Copyright &copy; (λχ.χ)((λυ.υ)(2013) • (λζ.ζ)(Aaron L. Stephanus));
+          </div>
+          
+          <!-- 
+            Audio Player Controls Interface. Implemented as a jQuery Mobile Panel Widget
+            TODO: Consider whether or not audio should be stopped if the panel is swiped closed. 
+          -->
+          <div 
+            id="player-panel" 
+            data-role="panel" 
+            data-theme="d" 
+            data-position="right" 
+            data-display="push"
+            data-position-fixed="true"
+          >
+            <div id="audio-player">
+              <a href="#" id="rewind-button" class="disabled-button nocallout" title="Rewind">
+                <span id="rewind-button-inner" class="ir">Rewind</span>
+              </a>
+              <a href="#" id="play-pause-button" class="nocallout" title="Play">
+                <span id="play-pause-button-inner" class="play-state ir">Play</span>
+              </a>
+              <a href="#" id="stop-button" class="disabled-button hidden-button nocallout" title="Stop">
+                <span id="stop-button-inner" class="ir">Stop</span>
+              </a>
+              <a href="#" id="forward-button" class="disabled-button nocallout" title="Fast Forward">
+                <span id="forward-button-inner" class="ir">Forward</span>
+              </a>
+              <br class="clearfix">
+              <div id="audio-player-gutter">
+                <div id="audio-player-scrubber">&nbsp;</div>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+        
+        <div id="followers" data-role="page" data-theme="a">
+          <div data-role="header" data-position="fixed">
+            <a href="#player-page">Player</a>
+            <h1>Followers</h1>
+          </div>
+          <div id="followers-content" data-role="content">
+            <!--  TODO: Figure out the followers listing layout and that. -->
+          </div>
+          <div data-role="footer" data-position="fixed">
+            Copyright &copy; (λχ.χ)(2013 • (λx.x)(Aaron L. Stephanus))
+          </div>
+        </div>
+      </main>
+
+      <script src="js/jquery/plugins/jquery.cookie.js"></script>
+      <script src="js/swipe_updown_events.js"></script>      
+      <script src="js/angular/angular.js"></script>
+      <script src="js/sm2/soundmanager2.js"></script>
+      <script src="//connect.soundcloud.com/sdk.js"></script>
+      <script src="js/load.js"></script>
+    </body>
+</html>
