@@ -201,6 +201,14 @@ textarea[contenteditable] {
 }
 
 
+
+
+/****************************************************************
+ * 
+ * Application-specific rules begin here...
+ *
+ ****************************************************************/
+
 /*
  * Audio player controls interface rules.
  */
@@ -326,6 +334,7 @@ textarea[contenteditable] {
  
 main {
 	width: 100%;
+	height: 100%;
 }
 
 #splash {
@@ -335,19 +344,36 @@ main {
 }
 
 #splash-content > div {
-	width: 100%;
-	height: 100%;
-	display: table-cell;
-	vertical-align: middle;
-	font-size: 2em;
-	font-weight: bold;
-	font-style: normal;
-} 
+	width: 64px;
+	height: 43px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  margin-top: -21.5px;
+  margin-left: -32px;
+  background-image: url('../img/soundcloud_logo.png');
+  background-repeat: none;
+  background-attachment: scroll;
+  background-position: center center;
+  background-color: transparent;
+}
+ 
 #profile {
 	width: 99.5%;
 	text-align: left;
 }
 
+@media only screen and (-webkit-min-device-pixel-ratio: 1.5),
+       only screen and (min-resolution: 144dpi)
+{
+	#splash-content > div {
+	  width: 128px;
+	  height: 86px;
+	  margin-top: -43px;
+	  margin-left: -64px;
+	  background-image: url('../img/soundcloud_logo-retina.png');
+	}
+}
 @media only screen and (min-width: 320px) and (-webkit-min-device-pixel-ratio: 1.5),
   only screen and (min-resolution: 144dpi)
 {
