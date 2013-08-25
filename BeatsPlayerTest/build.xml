@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="aarons-soundcloud-player" basedir=".">
+    <property name="REMOTE_BASE" value="root@aaronstephanus.com:/var/www/vhosts/moveremus.com/httpdocs/beatsmusic/"/>
+
+  <target name="css">
+  	<echo message="Uploading CSS files to the remote host."/>
+    <scp todir="${REMOTE_BASE}css/" password="${pw}" verbose="true">
+      <fileset dir="./css/">
+        <modified>
+          <param name="cache.cachefile" value="localdev.cache"/>
+        </modified>
+      </fileset>
+    </scp> 
+  </target>
+  
+  <target name="img">
+    <echo message="Uploading image files to the remote host."/>
+    <scp todir="${REMOTE_BASE}img/" password="${pw}" verbose="true">
+      <fileset dir="./img/">
+        <modified>
+          <param name="cache.cachefile" value="localdev.cache"/>
+        </modified>
+      </fileset>
+    </scp> 
+  </target>
+  
+  <target name="js">
+    <echo message="Uploading application JavaScript files to the remote host."/>
+    <scp todir="${REMOTE_BASE}js/" password="${pw}" verbose="true">
+      <fileset dir="./js/">
+        <modified>
+          <param name="cache.cachefile" value="localdev.cache"/>
+        </modified>
+      </fileset>
+    </scp> 
+  </target>
+  
+  <target name="js-aarons-player">
+    <scp todir="${REMOTE_BASE}js/aarons-player/" password="${pw}" verbose="true">
+      <fileset dir="./js/aarons-player/">
+        <modified>
+          <param name="cache.cachefile" value="localdev.cache"/>
+        </modified>
+      </fileset>
+    </scp> 
+  </target>
+    
+	<target name="js-angular">
+	  <echo message="Uploading AngularJS files to remote host."/>
+	 	<scp toDIr="${REMOTE_BASE}js/angular/" password="${pw}" verbose="true">
+	 	  <fileset dir="./js/angular/">
+	 	    <modified>
+	 	      <param name="cache.cachefile" value="localdev.cache"/>
+		    </modified>
+	    </fileset>
+	 	</scp>
+	</target>
+  
+	<target name="js-fills">
+		<echo message="Upload JavaScript fills files to remote host."/>
+		<scp toDir="${REMOTE_BASE}js/fills/" password="${pw}" verbose="true">
+		  <fileset dir="./js/fills/">
+		  	<modified>
+		  	  <param name="cache.cachefile" value="localdev.cache"/>
+		  	</modified>
+		  </fileset>
+		</scp>
+	</target>
+	  
+  <target name="root">
+      
+    <echo message="Uploading application files in root directory excluding subdirectories."/>
+    <scp todir="${REMOTE_BASE}" password="${pw}" verbose="true">
+      <fileset dir="./">
+        <exclude name="build.xml"/>
+        <exclude name="**.md"/>
+        <exclude name=".DS_Store"/>
+        <exclude name=".project"/>
+        <exclude name=".settings"/>
+        <exclude name=".git**"/>
+        <exclude name="localdev.cache"/>
+        <exclude name="css"/>
+        <exclude name="img"/>
+        <exclude name="js"/>
+        <modified>
+          <param name="cache.cachefile" value="localdev.cache"/>
+        </modified>
+      </fileset>
+    </scp> 
+  </target>
+
+	<target name="js-jquery">
+	  <echo message="Uploading jQuery files to remote host."/>
+		<scp toDir="${REMOTE_BASE}js/jquery/" password="${pw}" verbose="true">
+		  <fileset dir="./js/jquery/">
+		    <modified>
+		      <param name="cache.cachefile" value="localdev.cache"/>
+		  	</modified>
+		  </fileset>
+		</scp>
+	</target>
+	
+	<target name="js-sm2">
+	  <echo message="Uploading SoundManager2 to remote host."/>
+	  <scp toDir="${REMOTE_HOST}js/sm2/" password="${pw}" verbose="true">
+	  	<fileset dir="./js/sm2/">
+	  		<modified>
+	  	    <param name="cache.cachefile" value="localdev.cache"/>
+	  	  </modified>
+	   </fileset>
+	  </scp>
+	</target>
+	
+	<target name="js-root">
+		<echo message="Uploading root JavaScript files to remote host."/>
+		<scp toDir="${REMOTE_HOST}js/" password="${pw}" verbose="true">
+			<fileset dir="./js/">
+				<include name="./js/load.js"/>
+				<include name="./js/modernizr.custom.js"/>
+				<include name="./js/swipe_updown_events.js"/>
+				<exclude name="aarons-player"/>
+				<exclude name="angular"/>
+				<exclude name="fills"/>
+				<exclude name="jquery"/>
+				<exclude name="sm2"/>
+				<modified>
+				  <param name="cache.cachefile" value="localdev.cache"/>
+				</modified>
+			</fileset>
+		</scp>
+	</target>
+	
+  <target name="all">      
+    <echo message="Uploading all application files to remote host."/>
+    <scp todir="${REMOTE_BASE}" password="${pw}" verbose="true">
+      <fileset dir="./">
+        <exclude name="build.xml"/>
+        <exclude name="**.md"/>
+        <exclude name=".project"/>
+        <exclude name=".settings"/>
+        <exclude name=".git**"/>
+      	<exclude name="localdev.cache"/>
+        <modified>
+          <param name="cache.cachefile" value="localdev.cache"/>
+        </modified>
+      </fileset>
+    </scp> 
+  </target>
+  
+</project>

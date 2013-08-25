@@ -88,7 +88,10 @@
   SCUserProfile.prototype.followers_count = 0;
   SCUserProfile.prototype.following_count = 0;
   SCUserProfile.prototype.public_favorites_count = 0;
-  
+  SCUserProfile.prototype.toJSON = function() {
+    return copyObject(this, {});
+  };
+
   /**
    * Perform an asynchronous request for user profile sub-resources.
    * @param {string} name
@@ -181,6 +184,10 @@
    * @see SCUserProfile
    */
   function SCUserProfileCache() {
+    
+    if (SCUserProfileCache._instance instanceof SCUserProfileCache) {
+      return SCUserProfileCache._instance;
+    }
     
     /**
      * Object hash for storing cached user profile objects.
@@ -328,22 +335,40 @@
       if (!isInt(uid) || (uid == $scope.current_profile_uid)) {
         return;
       }
+      var cache = SCUserProfileCache.getInstance();
       var defer = $.Deferred();
       var profile = {};
+      
+      if (cache.getProfileCount() > 0) {
+        profile = cache.getProfileById(uid);
+        if (profile instanceof SCPUserProfile) {
+          $scope.current_profile_uid = uid;
+          $scope.current_profile = profile;
+          return;
+        }
+      }
       
       defer.promise().done(function(data) {
         $scope.current_profile_uid = uid;
         $scope.current_profile = new SCUserProfile(data);
+        
+        //
+        // Retrieve the profile's tracks,
+        //    followers, and
+        //    followings.
+        // Then add the profile to the cache, and hide
+        //    the loading widget.
+        //
         $scope.current_profile.getTracks()
           .done(function() {
             $scope.current_profile.getFollowers()
               .done(function() {
                 $scope.current_profile.getFollowings()
                   .done(function() {
-                    
+                    // Add the profile to the cache
+                    SCUserProfileCache.getInstance().addProfile($scope.current_profile);
                     // Hide the Loading Widget finally.
                     $.mobile.loading('hide');
-                    
                   }).fail(failedPromise);
               }).fail(failedPromise);
           }).fail(failedPromise);

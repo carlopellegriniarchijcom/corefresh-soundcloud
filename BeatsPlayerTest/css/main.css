@@ -234,6 +234,20 @@ textarea[contenteditable] {
 	-moz-border-radius: 50%;
 	-o-border-radius: 50%;
 	border-radius: 50%;
+	background-image: linear-gradient(left top, rgb(2,73,0) 1%, rgb(89,255,60) 60%, rgb(3,199,0) 36%);
+	background-image: -o-linear-gradient(left top, rgb(2,73,0) 1%, rgb(89,255,60) 60%, rgb(3,199,0) 36%);
+	background-image: -moz-linear-gradient(left top, rgb(2,73,0) 1%, rgb(89,255,60) 60%, rgb(3,199,0) 36%);
+	background-image: -webkit-linear-gradient(left top, rgb(2,73,0) 1%, rgb(89,255,60) 60%, rgb(3,199,0) 36%);
+	background-image: -ms-linear-gradient(left top, rgb(2,73,0) 1%, rgb(89,255,60) 60%, rgb(3,199,0) 36%);
+
+	background-image: -webkit-gradient(
+	  linear,
+	  left top,
+	  right bottom,
+	  color-stop(0.01, rgb(2,73,0)),
+	  color-stop(0.6, rgb(89,255,60)),
+	  color-stop(0.36, rgb(3,199,0))
+	);
 }
 
 .disabled-button {
