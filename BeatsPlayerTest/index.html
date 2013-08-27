@@ -39,6 +39,7 @@
         <link rel="stylesheet" href="css/main.css">
         <link rel="stylesheet" href="js/jquery/jquery.mobile.custom.structure.css">
         <link rel="stylesheet" href="js/jquery/jquery.mobile.custom.theme.css">
+        <link rel="stylesheet" href="css/jqm-overrides.css">
         
         <!-- It is recommended to include Modernizr in the head instead at the end of the body
              because of the HTML5Shiv for old school IE, and to avoid any FOUC due to adding
@@ -56,92 +57,16 @@
       <main>
         <div id="splash" data-role="page" data-theme="a">
           <div data-role="content" id="splash-content">
-            <div class="ir">SoundCloud Surfer</div>
+            <div class="ir transparent">SoundCloud Surfer</div>
           </div>
         </div>
-        <div id="profile" data-role="page" data-theme="a">
+        <div id="profile" data-role="page" data-theme="a" ng-app="ngView">
           <div data-role="header" data-position="fixed" data-id="site-header">
             <h1>SoundCloud Surfer</h1>
           </div>
-          <div id="profile-page-content" data-role="content">
-          
-            <!-- This bit is managed using Angular -->
-            <article class="sound-cloud-profile" ng-app>
-						  <header>
-						    <hgroup>
-						      <h2 class="profile-avatar"><img ng-src="{{current_profile.avatar_url}}" alt=""></h2>
-						      <h3 class="profile-fullname">{{current_profile.full_name}}</h3>
-						    </hgroup>
-						  </header>
-						  <section class="profile-body">
-						    <ul class="profile-details">
-						      <li>{{ current_profile.city }},&nbsp;{{ current_profile.country }}</li>
-						      <li>Track Count:&nbsp;{{ current_profile.track_count }}</li>
-						      <li>Set Count:&nbsp;{{ current_profile.playlist_count }}</li> 
-						    </ul>
-						    <p>{{ current_profile.description }}</p>
-						    <ol 
-						      data-role="listview" 
-						      data-inset="true"
-						      data-icon="arrow-r"
-						      data-theme="a" 
-						      ng-repeat="track in current_profile.tracks"
-						    >
-						      <!-- Tap/click on a list item displays the playback controls panel,
-						           and begins playback of the selected track, first stopping playback
-						           of any track that may be playing already.
-						      -->
-						      <li><a href="#" class="playable" data-track-id="{{track.id}}" title="{{track.title}}">{{track.title}}</a></li>
-						    </ol>
-						  </section>
-						  <section class="profile-connections">
-						    <div data-role="collapsible-set">
-						      <div data-role="collapsible" data-collapsed="true" data-theme="a" data-content-theme="c">
-						        <h4>Followers</h4>
-						        <ul
-						          data-role="listview"
-						          data-inset="true"
-						          data-icon="forward"
-						          data-theme="b"
-						        >
-						          <li ng-repeat="follower in current_profile.followers">
-						            <a 
-						              href="#" 
-						              class="friend-profile-link" 
-						              title="{{follower.full_name}}"
-						              ng-click="selectProfile(follower.id)"
-						            >
-						              <img ng-src="{{follower.avatar_url}}" alt=""><strong>{{follower.full_name}}</strong>
-						            </a>
-						          </li>
-						        </ul>
-						      </div>
-						      <div data-role="collapsible" data-collapsed="true">
-						        <h4>Following</h4>
-						        <ul
-						          data-role="listview"
-						          data-inset="true"
-						          data-icon="forward"
-						          data-theme="b"
-						        >
-						          <li ng-repeat="following in current_profile.followings">
-						            <a 
-						              href="#"
-						              class="friend-profile-link"
-						              title="{{following.full_name}}"
-						              ng-click="selectProfile(following.id)"
-						            >
-						              <img ng-src="{{following.avatar_url}}" alt=""><strong>{{following.full_name}}</strong>
-						            </a>
-						          </li>
-						        </ul>
-						      </div>
-						    </div>
-						  </section>
-						</article>
-          </div>
+          <div id="profile-page-content" class="transparent" data-role="content" ng-view></div>
           <div data-role="footer" data-position="fixed" data-id="site-footer">
-            Copyright &copy; (λχ.χ)((λυ.υ)(2013) • (λζ.ζ)(Aaron L. Stephanus));
+            (λχ.χ)(Copyright &copy; 2013 • (λζ.ζ)(Aaron L. Stephanus));
           </div>
           
           <!-- 
@@ -151,45 +76,48 @@
           <div 
             id="player-panel" 
             data-role="panel" 
-            data-theme="d" 
+            data-theme="a"
             data-position="right" 
             data-display="push"
             data-position-fixed="true"
           >
-            <div id="audio-player">
-              <a href="#" id="rewind-button" class="disabled-button nocallout" title="Rewind">
-                <span id="rewind-button-inner" class="ir">Rewind</span>
-              </a>
-              <a href="#" id="play-pause-button" class="nocallout" title="Play">
-                <span id="play-pause-button-inner" class="play-state ir">Play</span>
-              </a>
-              <a href="#" id="stop-button" class="disabled-button hidden-button nocallout" title="Stop">
-                <span id="stop-button-inner" class="ir">Stop</span>
-              </a>
-              <a href="#" id="forward-button" class="disabled-button nocallout" title="Fast Forward">
-                <span id="forward-button-inner" class="ir">Forward</span>
-              </a>
-              <br class="clearfix">
-              <div id="audio-player-gutter">
-                <div id="audio-player-scrubber">&nbsp;</div>
-              </div>
-            </div>
-          </div>
-          
-        </div>
-        
-        <div id="followers" data-role="page" data-theme="a">
-          <div data-role="header" data-position="fixed">
-            <a href="#player-page">Player</a>
-            <h1>Followers</h1>
-          </div>
-          <div id="followers-content" data-role="content">
-            <!--  TODO: Figure out the followers listing layout and that. -->
-          </div>
-          <div data-role="footer" data-position="fixed">
-            Copyright &copy; (λχ.χ)(2013 • (λx.x)(Aaron L. Stephanus))
-          </div>
-        </div>
+            <header>
+              <h5>Now Playing <span id="track-title"></span></h5>
+            </header>
+           
+            <div id="audio-player-wrapper" class="clearfix"> 
+	            <div id="audio-player">
+	              <a href="#" id="rewind-button" class="disabled-button nocallout" title="Rewind">
+	                <span id="rewind-button-inner" class="ir">Rewind</span>
+	              </a>
+	              <a href="#" id="play-pause-button" class="nocallout" title="Play">
+	                <span id="play-pause-button-inner" class="play-state ir">Play</span>
+	              </a>
+	              <a href="#" id="stop-button" class="disabled-button hidden-button nocallout" title="Stop">
+	                <span id="stop-button-inner" class="ir">Stop</span>
+	              </a>
+	              <a href="#" id="forward-button" class="disabled-button nocallout" title="Fast Forward">
+	                <span id="forward-button-inner" class="ir">Forward</span>
+	              </a>
+	              <a href="#" id="volume-button" class="nocallout" title="Adjust volume">
+	                <span id="volume-button-inner" class="ir">Volume</span>
+	              </a>
+	              <div id="audio-player-gutter">
+	                <div id="audio-player-scrubber">&nbsp;</div>
+	              </div>
+	            </div>
+	            <div id="current-track-artwork">
+	              <img>
+	            </div>
+	          </div>
+	          <div id="audio-comments" class="clearfix">
+	            <header>
+	              <h6>Timed Comments</h6>
+	            </header>
+	            <ul id="audio-comment-list"></ul>
+	          </div>
+          </div><!-- /#player-panel -->
+        </div><!-- /#profile -->
       </main>
 
       <script src="js/jquery/plugins/jquery.cookie.js"></script>
@@ -198,5 +126,6 @@
       <script src="js/sm2/script/soundmanager2.js"></script>
       <script src="js/soundcloud/sdk.js"></script>
       <script src="js/load.js"></script>
+      <script src="js/aarons-player/player.js"></script>
     </body>
 </html>

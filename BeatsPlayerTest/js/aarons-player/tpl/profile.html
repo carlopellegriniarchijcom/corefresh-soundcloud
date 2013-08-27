@@ -1,8 +1,9 @@
-<article class="sound-cloud-profile">
+<!-- This bit is managed using Angular -->
+<article class="sound-cloud-profile" ng-model="current_profile">
   <header>
     <hgroup>
-      <h2 class="profile-avatar"><img src="{{ current_profile.avatar_url }}" alt=""></h2>
-      <h3 class="profile-fullname">{{ current_profile.full_name }}</h3>
+      <h2 class="profile-avatar"><img ng-src="{{current_profile.avatar_url}}" alt=""></h2>
+      <h3 class="profile-fullname">{{current_profile.full_name}}</h3>
     </hgroup>
   </header>
   <section class="profile-body">
@@ -12,9 +13,63 @@
       <li>Set Count:&nbsp;{{ current_profile.playlist_count }}</li> 
     </ul>
     <p>{{ current_profile.description }}</p>
-    <ul class="profile-track-list" ng-repeat="track in current_profile.tracks">
-      <li class="playable">{{ track.title }}</li>  
-    </ul>
+    <ol 
+      data-role="listview" 
+      data-inset="true"
+      data-icon="arrow-r"
+      data-theme="a"
+    >
+      <!-- Tap/click on a list item displays the playback controls panel,
+           and begins playback of the selected track, first stopping playback
+           of any track that may be playing already.
+      -->
+      <li ng-repeat="track in current_profile.tracks">
+        <a href="#" class="playable" data-track-id="{{track.id}}" title="{{track.title}}" data-ng-click="playTrack(track.id)">{{track.title}}</a>
+      </li>
+    </ol>
   </section>
-  
+  <section class="profile-connections">
+    <div data-role="collapsible-set" data-mini="true"  data-theme="d">
+      <div data-role="collapsible" data-collapsed="true" data-content-theme="c">
+        <h4>Followers</h4>
+        <ul
+          data-role="listview"
+          data-inset="true"
+          data-icon="forward"
+          data-theme="b"
+        >
+          <li ng-repeat="follower in current_profile.followers">
+            <a 
+              href="#" 
+              class="friend-profile-link" 
+              title="{{follower.full_name}}"
+              data-friend-id="{{follower.id}}"
+            >
+              <img ng-src="{{follower.avatar_url}}" alt=""><strong>{{follower.full_name}}</strong>
+            </a>
+          </li>
+        </ul>
+      </div>
+      <div data-role="collapsible" data-collapsed="true">
+        <h4>Following</h4>
+        <ul
+          data-role="listview"
+          data-inset="true"
+          data-icon="forward"
+          data-theme="b"
+        >
+          <li ng-repeat="following in current_profile.followings">
+            <a 
+              href="#"
+              class="friend-profile-link"
+              title="{{following.full_name}}"
+              data-friend-id="{{following.id"
+            >
+              <img ng-src="{{following.avatar_url}}" alt=""><strong>{{following.full_name}}</strong>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
 </article>

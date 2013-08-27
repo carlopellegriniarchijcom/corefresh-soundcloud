@@ -209,6 +209,24 @@ textarea[contenteditable] {
  *
  ****************************************************************/
 
+#audio-player {
+	width: 49.5%;
+	height: 270px;
+	float: left;
+}
+
+#current-track-avatar {
+	width: 49.5%;
+	height: 270px;
+	float: right;
+	text-align: center;
+}
+
+#current-track-avatar > img {
+	display: inline-block;
+	margin: 0 auto;
+}
+
 /*
  * Audio player controls interface rules.
  */
@@ -217,26 +235,54 @@ textarea[contenteditable] {
 	height: 48px;
 	margin: 0;
 	padding: 0;
-	float: left;
 }
 
-#audio-player span {
+#audio-player a > span {
 	background-color: transparent;
 	background-repeat: no-repeat;
 	background-attachment: scroll;
 	background-position: center center;
+	width: 48px;
+	height: 48px;
+}
+
+#play-pause-button > span.play-state {
+	background-image: url('../img/play-button-48x48.png');
+}
+#play-pause-button > span.pause-state {
+	background-image: url('../img/pause-button-48x48.png');
+}
+#rewind-button > span {
+	background-image: url('../img/rewind-button-48x48.png');
+}
+
+#stop-button > span {
+  background-image: url('../img/stop-button-48x48.png');
+}
+
+#forward-button > span {
+  background-image: url('../img/forward-button-48x48.png');
+}
+
+#volume-button > span {
+	background-image: url('../img/volume-button-48x48.png');
 }
 
 #audio-player-gutter {
 	width: 100%;
 	height: 12px;
 	position: relative;
+	background-color: #333;
+	margin-top: 12px;
+	margin-left: 9px;
 }
 
 #audio-player-scrubber {
 	position: absolute;
 	top: -12px;
 	left: 0;
+	width: 24px;
+	height: 24px;
 	border-style: solid;
 	-webkit-border-radius: 50%;
 	-moz-border-radius: 50%;
@@ -273,7 +319,7 @@ textarea[contenteditable] {
 }
 
 .shown-button {
-  display: inline-block;
+  display: block;
   opacity: 1;	
 }
 
@@ -343,6 +389,19 @@ main {
 	text-align: center;
 }
 
+.transparent {
+	opacity: 0;
+	-webkit-transition: opacity 2s ease 0s;
+	-moz-transition: opacity 2s ease 0s;
+	-ms-transition: opacity 2s ease 0s;
+	-o-transition: opacity 2s ease 0s;
+	transition: opacity 2s ease 0s;
+}
+
+.opaque {
+	opacity: 1;
+}
+
 #splash-content > div {
 	width: 128px;
 	height: 86px;
@@ -356,8 +415,23 @@ main {
   background-attachment: scroll;
   background-position: center center;
   background-color: transparent;
+  -webkit-transition: -webkit-transform 2s, width 2s, height 2s, opacity 2s;
+  -moz-transition: -moz-transform 2s, width 2s, height 2s, opacity 2s;
+  -ms-transition: -ms-transform 2s, width 2s, opacity 2s;
+  -o-transition: -o-transform 2s, width 2s, height 2s, opacity 2s;
+  transition: transform 2s, width 2s, height 2s, opacity 2s;
 }
- 
+
+.rotate-out {
+  width: 0;
+  height: 0;
+  -webkit-transform: rotate(360deg);
+  -moz-transform: rotate(360deg);
+  -ms-transform: rotate(360deg);
+  -o-transform: rotate(360deg);
+  transform: rotate(360deg);
+  opacity: 0;
+}
 #profile {
 	width: 99.5%;
 	text-align: left;
@@ -427,4 +501,11 @@ main {
 	  width: 800px;
 	  margin: 0 auto;
 	}
+}
+
+ul.profile-details {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+	width: 100%;
 }

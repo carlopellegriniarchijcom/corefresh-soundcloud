@@ -2,8 +2,11 @@
 // Configure SoundManager2's Flash Fallback Settings
 //
 soundManager.setup({
+  preferFlash: false,
+  useHTML5Audio: true,
   url: 'js/sm2/swf/',
-  flashVersion: 9
+  flashVersion: 9,
+  wmode: 'transparent'
 });
 
 

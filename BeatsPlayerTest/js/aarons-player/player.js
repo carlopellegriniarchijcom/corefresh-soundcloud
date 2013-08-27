@@ -57,14 +57,43 @@
    */
   var PROFILE_COOKIE_NAME = 'aarons_player_profile_id';
   
+
+  // Ensure that the SoundCloud SDK JavaScript is available.
+  // If it is not then create the AaronsPlayer namespace on the
+  // global window object with a 'state' property configured
+  // to indicate a critical error condition.
+  if (typeof(window.SC) !== 'object' || window.SC === null) {
+    window.AaronsPlayer = {
+      state: {
+        error: new ReferenceError('The SoundCloud SDK is not available.'),
+        critical: true
+      }
+    };
+    
+    // Freeze the namespace if the platform is capable,
+    // and then return without constructing the soundcloud
+    // integrated player.
+    freezeIt(window.AaronsPlayer);  
+    return;
+  }
+  
+  
+  // Initialize the SoundCloud SDK.
+  SC.initialize({
+    client_id: CLIENT_ID  
+  });
+  
   
   /**
    * @class The SCUserProfile class contains properties that define a single user profile on SoundCloud.
    * @param {Object} data Property value initialization object. Direct properties on this object are copied into the new instance.
    */
   function SCUserProfile(data) {
+    
+    console.debug('The data provided to the SCUserProfile constructor is as follows:');
+    console.debug(data);
     if (typeof(data) === 'object' && data !== null) {
-      copyObject(data, this);
+      return copyObject(data, this);
     }
   }
   
@@ -249,6 +278,15 @@
     };
     
     /**
+     * Return a boolean indicating if a profile is present in the cache.
+     * @param {string|integer} id
+     * @returns {Boolean}
+     */
+    this.hasProfile = function(id) {
+      return profiles.hasOwnProperty(id.toString());
+    };
+    
+    /**
      * Persist the profile cache in Local Storage (if possible).
      * @returns {Boolean}
      */
@@ -302,7 +340,140 @@
     }
     return SCUserProfileCache._instance;
   };
+
+  function AudioController() {
+    
+    var sound_object = null;
+    
+    this.setSoundObject = function(sound) {
+      if (sound_object !== null && sound_object.playState === 1) {
+        this.stop();
+      }
+      sound_object = sound;
+      return this;
+    };
+    
+    this.play = function() {
+      if (sound_object === null) {
+        return this;
+      }
+      if (sound_object.paused === true) {
+        sound_object.resume();
+        return this;
+      }
+      if (sound_object.playState === 1) {
+        this.stop();
+      }
+      sound_object.play();
+      return this;
+    };
+    
+    this.pause = function() {
+      if (sound_object === null || sound_object.playState === 0) {
+        return this;
+      }
+      try {
+        sound_object.pause();
+      }
+      catch (ex) {
+        debugLog(ex);
+      }
+      return this;
+    };
+    
+    
+    this.stop = function() {
+      if (sound_object === null || sound_object.playState === 0) {
+        return this;
+      }
+      try {
+        sound_object.stop();
+      }
+      catch (ex) {
+        debugLog(ex);
+      }
+      return this;
+    };
+    
+    this.setVolume = function(v) {
+      if (sound_object === null) {
+        return this;
+      }
+      try {
+        sound_object.setVolume(v);
+      }
+      catch (ex) {
+        debugLog(ex);
+      }
+      return this;
+    };
+    
+    this.setPosition = function(ms) {
+      var defer = $.Deferred();
+      if (sound_object === null || !isInt(ms)) {
+        defer.reject('Invalid Sound object, or playback position.');
+        return defer.promise();
+      }
+      
+      // If the position requested is beyond what has been loaded as so far
+      // then queue the change in position. When enough data has been downloaded
+      // the position will change and the Deferred Promise object will be resolved.
+      if (sound_object.duration < ms) {
+        queuePositionChange(ms, defer);
+        return defer.promise();
+      }
+      
+      try {
+        sound_object.setPosition(ms);
+        defer.resolve(ms);
+      }
+      catch (ex) {
+        debugLog(ex);
+        defer.reject(ex.message);
+      }
+      return defer.promise();
+    };
+    
+    function queuePositionChange(ms, defer) {
+      
+      var tid = 0;
+      var INTERVAL = 1000;
+      
+      function timeCheck() {
+        if (sound_object.duration >= ms) {
+          clearInterval(tid);
+          tid = 0;
+          try {
+            sound_object.setPosition(ms);
+            defer.resolve(ms);
+          }
+          catch (ex) {
+            debugLog(ex);
+            defer.reject(ex.message);
+          }
+        }
+      }
+      setInterval(timeCheck, INTERVAL);
+    }
+  }
   
+  /**
+   * Singleton instance.
+   * @type {AudioController}
+   * @private
+   */
+  AudioController._instance = null;
+  
+  /**
+   * Return the singleton instance.
+   * @returns AudioController
+   */
+  AudioController.getInstance = function() {
+    if (!(AudioController._instance instanceof AudioController)) {
+      AudioController._instance = new AudioController();
+    }
+    return AudioController._instance;
+  };
   
 //
 // Angular controllers/modules
@@ -336,21 +507,46 @@
         return;
       }
       var cache = SCUserProfileCache.getInstance();
-      var defer = $.Deferred();
-      var profile = {};
+      var profile = null;
       
-      if (cache.getProfileCount() > 0) {
+      //
+      // If there are items in the cache, and the identified profile
+      // is already cached then retrieve it from the cache and apply
+      // it to the model.
+      //
+      if (cache.getProfileCount() > 0 && cache.hasProfile(uid)) {
         profile = cache.getProfileById(uid);
-        if (profile instanceof SCPUserProfile) {
+        if (profile instanceof SCUserProfile) {
           $scope.current_profile_uid = uid;
           $scope.current_profile = profile;
+          writeToCookie(PROFILE_COOKIE_NAME, uid);
           return;
         }
       }
+
+      //
+      // Store an empty object in the profile variable to be used
+      // as the target storage object for the profile data.
+      //
+      profile = {};
       
+      //
+      // The requested profile is not cached. Therefore attempt the 
+      // asynchronous loading of profile data, along with the tracks,
+      // followers, and followings sub-resources.
+      //
+      var defer = $.Deferred();
       defer.promise().done(function(data) {
-        $scope.current_profile_uid = uid;
-        $scope.current_profile = new SCUserProfile(data);
+      
+        $.mobile.changePage('#profile', {
+          allowSamePageTransitions: true,
+          changeHash: false,
+          transition: 'slidedown'
+        });
+        
+        // Create a new SCUserProfile object to represent
+        // the loaded user profile data.
+        profile = new SCUserProfile(data);
         
         //
         // Retrieve the profile's tracks,
@@ -359,20 +555,57 @@
         // Then add the profile to the cache, and hide
         //    the loading widget.
         //
-        $scope.current_profile.getTracks()
+        profile.getTracks()
           .done(function() {
-            $scope.current_profile.getFollowers()
+            profile.getFollowers()
               .done(function() {
-                $scope.current_profile.getFollowings()
+                profile.getFollowings()
                   .done(function() {
+                    
+                    var TIMEOUT_MS = 1000;
+                    
                     // Add the profile to the cache
-                    SCUserProfileCache.getInstance().addProfile($scope.current_profile);
+                    cache.addProfile(profile);
+                    
+                    // Update the model
+                    $scope.current_profile_uid = uid;
+                    $scope.current_profile = profile;
+                    
                     // Hide the Loading Widget finally.
                     $.mobile.loading('hide');
+                    
+                    // Persist the User ID of the selected user profile in a cookie
+                    // for use upon later visits to the application.
+                    writeToCookie(PROFILE_COOKIE_NAME, uid);
+                 
+                    //
+                    // Hackerifick! trigger 'create' after a brief timeout.
+                    // then show the page content after another brief timeout.
+                    // I don't know how else to deal with this yet.
+                    //
+                    
+                    // First navigate back in the history.
+                    // For some reason I need to do this, and I haven't
+                    // figured out why yet. Possibly this has something to
+                    // do with using jQM with Angular. Not sure!
+                    window.history.back();
+                    
+                    setTimeout(function() {
+                      debugLog('Triggering the create event...');
+                      $('#profile-page-content')
+                        .trigger('create');
+                      setTimeout(function() {
+                        $('#profile-page-content').addClass('opaque');
+                      }, TIMEOUT_MS);
+                    }, TIMEOUT_MS);
+                    
                   }).fail(failedPromise);
               }).fail(failedPromise);
           }).fail(failedPromise);
       }).fail(failedPromise);
+      
+      // Hide the profile page content.
+      $('#profile-page-content').addClass('transparent').removeClass('opaque');
       
       //
       // Display the Loading Widget.
@@ -389,47 +622,88 @@
       );
     };
     
+    $scope.playTrack = function(track_id) {
+      
+      if (!isInt(track_id) || track_id == 0) {
+        debugLog('Invalid track ID received in playTrack method: ' + track_id);
+      }
+      var track = null;
+      var tracks = $scope.current_profile.tracks;
+      someEls(tracks, function(el, ndx, a) {
+        if (el.id == track_id) {
+          track = el;
+          return true;
+        }
+        return false;
+      });
+      if (track === null) {
+        debugLog('There is no track in the current profile with the specified ID: ' + track_id);
+        return;
+      }
+      
+      // Set the "Now Playing" track title.
+      $('#track-title').text(track.title);
+      
+      // Set the track's artwork.
+      var artwork = $('#current-track-artwork');
+      debugLog(track);
+      $('img', artwork).attr('src', track.artwork_url);
+      
+      // Open the panel, and begin streaming.
+      $('#player-panel').panel('open');
+      beginTrackStreaming(track_id)
+        .done(function(sound) {
+          AudioController.getInstance().setSoundObject(sound).play();
+        })
+        .fail(function(msg) {
+          debugLog(msg);
+          // TODO: Display a modal dialog with error message.
+          // And lose the alert()!
+          alert(msg);
+        });
+    };
+    
     //
     // Initialize any cached user data in local storage.
     //
     SCUserProfileCache.getInstance().loadProfiles();
     
     //
-    // Retrieve the last/default profile data.
+    // Load the last/default profile.
+    // selectProfile will check the cache first.
+    // Attempting to load the data from the SoundCloud API
+    // asynchronously only if it is not already cached.
     //
-    var current_profile = null;
-    if (SCUserProfileCache.getInstance().getProfileCount() > 0) {
-      current_profile = SCUserProfileCache.getInstance().getProfileById(last_profile_uid);
-    }
+    $scope.selectProfile(last_profile_uid);
     
-    // If the profile was loaded from the cache then use it 
-    // in the model.
-    if (current_profile !== null) {
-      $scope.current_profile_uid = last_profile_uid;
-      $scope.current_profile = current_profile;
-      current_profile = null; // no need to keep the reference around anymore.
-    }
-    
-    // If the profile was not loaded from the cache then
-    // begin the asynchronous load of profile data using
-    // the selectProfile method.
-    else {
-      $scope.current_profile_uid = 0;
-      $scope.current_profile = new SCUserProfile();
-      $scope.selectProfile(last_profile_uid);
-    }
+    ProfileCtrl._scope = $scope;
   }
+  
+  ProfileCtrl._scope = null;
   
   // Define a module to route the URL '/profile' to the ProfileCtrl controller
   // and profile.html template.
-  angular.module('ngView', [], function($route_provider, $location_provider) {
+  // Add a directive named 'triggerCreate' which will register a pagecreate event
+  // handler on the #profile page, and enhance the content with jQMu sing
+  // $('.sound-cloud-profile').trigger('create') on the parent <article>
+  // element of the profile template, enhancing the elements using jQM.
+  angular.module('ngView', [], function($routeProvider, $locationProvider) {
   
-    $route_provider.when('/profile', {
-      templateUrl: '/js/aarons-player/tpl/profile.html',
+    $routeProvider.when('/profile', {
+      templateUrl: 'js/aarons-player/tpl/profile.html',
       controller: ProfileCtrl
     });
     
   });
+  
+  function stopEvent(e) {
+    e.preventDefault();
+    if (e.stopPropagation) {
+      e.stopPropagation();
+    } else {
+      e.cancelBubble = true;
+    }
+  }
   
   /**
    * Callback function for failed asynchronous resource load attempts that return
@@ -470,9 +744,42 @@
     context = (typeof(context) === 'object' ? context : null);
     if ($.isFunction(a.forEach)) {
       a.forEach(callback, context);
-    } else {
+    } 
+    else {
       for (var i = 0, l = a.length; i < l; ++i) {
         callback.call(context, a[i], i, a);
+      }
+    }
+    return a;
+  }
+  
+  /**
+   * Facade for the Array.prototype.some functionality.
+   * If the <code>some</code> method is available on Array instances
+   * in the user's platform then it is used directly. Otherwise the
+   * behavior is mimicked using a for loop.
+   * @param {Array} a
+   * @param {Function} callback
+   * @param {Object|undefined} context
+   * @returns {Array} Returns the iterated Array (<code>a</code> argument).
+   * @throws {TypeError}
+   */
+  function someEls(a, callback, /* optional */ context /* = null */) {
+    if (!$.isArray(a)) {
+      throw new TypeError('Cannot iterate over a non array.');
+    }
+    else if (!$.isFunction(callback)) {
+      throw new TypeError('Cannot iterate over an array without a valid callback function.');
+    }
+    context = (typeof(context) === 'object' ? context : null);
+    if ($.isFunction(a.some)) {
+      a.some(callback, context);
+    }
+    else {
+      for (var i = 0, l = a.lengthl; i < l; ++i) {
+        if (callback.call(context, a[i], i, a) === true) {
+          return a;
+        }
       }
     }
     return a;
@@ -549,7 +856,57 @@
     return false;
   }
   
+  /**
+   * Attempts to begin streaming of an audio track identified by its unique ID.
+   * @param {integer} track_id
+   * @returns {Promise}
+   */
+  function beginTrackStreaming(track_id) {
+    if (!isInt(track_id) || track_id == 0) {
+      debugLog('Cannot stream track with an invalid track_id: ' + track_id);
+      return;
+    }
+    var defer = $.Deferred();
+    try {
+      SC.stream(
+        '/tracks/' + track_id, {
+          autoPlay: false,
+          ontimedcomments: function(comments) {
+            showTimedComments(comments);
+          }
+        },
+        function(sound) {
+          defer.resolve(sound);
+        }
+      ); 
+    }
+    catch (ex) {
+      defer.reject(ex.message);
+    }
+    return defer.promise();
+  }
   
+  /**
+   * Displays the array of timed track playback comments.
+   * Each comment item is appended to a list which automatically
+   * scrolls down with each new received comment(s).
+   * @param {Array} comments
+   */
+  function showTimedComments(comments) {
+    if (!$.isArray(comments) || comments.length === 0) {
+      return;
+    }
+    var list_id = '#audio-comment-list';
+    var img_tag = '<img/>';
+    var src_attr = 'src';
+    var title_attr = 'title';
+    var span_tag = '<span/>';
+
+    forEachEl(comments, function(el, ndx, a) {
+      $(img_tag).attr(src_attr, el.user.avatar_url).attr(title_attr, el.user.username).appendTo(list_id);
+      $(span_tag).html(el.body).appendTo(list_id);
+    });
+  }
   
   /**
    * @function
@@ -616,6 +973,7 @@
    * Read a named cookie's value.
    * @param {string} name
    * @returns {string|null}
+   * @inner
    */
   function readFromCookie(name) {
     if (!Modernizr.cookies) {
@@ -625,8 +983,24 @@
   }
   
   /**
+   * Write a named cookie's value.
+   * The value is converted to a string using the <code>toString</code> method.
+   * @param {string} name
+   * @param {any} value
+   * @inner
+   */
+  function writeToCookie(name, value) {
+    if (!Modernizr.cookies) {
+      return;
+    }
+    $.cookie(name, value.toString());
+  }
+  
+  /**
    * Logs a message to the debug console if it is available.
+   * The <code>msg</code> argument is converted to a string using the <code>toString</code> method.
    * @param {string|any} msg
+   * @inner
    */
   function debugLog(msg) {
     if (typeof(window.console) === 'object' && window.console !== null && $.isFunction(window.console.debug)) {
@@ -650,91 +1024,51 @@
     }
     return o;
   }
-  
-  
-  // Ensure that the SoundCloud SDK JavaScript is available.
-  // If it is not then create the AaronsPlayer namespace on the
-  // global window object with a 'state' property configured
-  // to indicate a critical error condition.
-  if (typeof(window.SC) !== 'object' || window.SC === null) {
-    window.AaronsPlayer = {
-      state: {
-        error: new ReferenceError('The SoundCloud SDK is not available.'),
-        critical: true
-      }
-    };
-    
-    // Freeze the namespace if the platform is capable,
-    // and then return without constructing the soundcloud
-    // integrated player.
-    freezeIt(window.AaronsPlayer);  
-    return;
-  }
-  
-  
-  // Initialize the SoundCloud SDK.
-  SC.initialize({
-    client_id: CLIENT_ID  
+
+  $(document).one('pageinit', '#splash', function(e) {
+    var TIMEOUT_MS = 2000;
+    var $logo = $('#splash-content > div');
+    $logo.addClass('opaque').removeClass('transparent');
+    setTimeout(function() {
+      $logo.addClass('rotate-out');
+      setTimeout(function() {
+        $.mobile.changePage('#profile', {
+          changeHash: true,
+          transition: 'pop'
+        });
+        //$.mobile.navigate('#profile');
+      }, TIMEOUT_MS);
+    }, TIMEOUT_MS);
   });
   
-  /**
-   * User ID of the profile that the user last viewed.
-   * @type {string|integer}
-   * @inner
-   */
-  var last_profile_uid = 0;
-
-  /**
-   * Current, or actively viewed user profile.
-   * @type {SCUserProfile}
-   * @default null
-   * @inner
-   */
-  var current_profile = null;
   
+  // Play/pause click event handler.
+  $(document).on('vclick', '#play-pause-button', function(e) {
+    stopEvent(e);
+    var FADE_TIME = 100;
+    var $this = $(this);
+    var inner = $('> span', $this);
+    var audio_ctrl = AudioController.getInstance();
+    if (inner.hasClass('play-state')) {
+      audio_ctrl.play();
+      $this.fadeOut(FADE_TIME, function() {
+        inner.removeClass('play-state').addClass('pause-state');
+        $this.fadeIn(FADE_TIME);
+      });
+    }
+    else if (inner.hasClass('pause-state')) {
+      audio_ctrl.pause();
+      $this.fadeOut(FADE_TIME, function() {
+        inner.removeClass('pause-state').addClass('play-state');
+        $this.fadeIn(FADE_TIME);
+      });
+    }
+  });
   
-  /**
-   * AaronsPlayer Namespace object.
-   * @type {Object}
-   * @inner
-   */
-  var _ap = {};
-
-  /**
-   * Application Initialization.
-   */
-  _ap.init = function() {
-    
-    // Determine if the user has "left off" at a specific SoundCloud profile.
-    // If not then default to using my own profile as the starting point.
-    last_profile_uid = readFromCookie(PROFILE_COOKIE_NAME);
-    if (!last_profile_uid) {
-      last_profile_uid = MY_UID;
-    } else if (!isInt(last_profile_id)) {
-      last_profile_uid = MY_UID;
-    }
-    
-    //
-    // Initialize any cached user data in local storage.
-    //
-    SCUserProfileCache.getInstance().loadProfiles();
-    
-    //
-    // Retrieve the last/default profile data.
-    //
-    
-    if (SCUserProfileCache.getInstance().getProfileCount() > 0) {
-      current_profile = SCUserProfileCache.getInstance().getProfileById(last_profile_uid);
-    }
-    
-    if (current_profile !== null) {
-      
-    }
-    
-    
-    if (Modernizr.audio) {
-      
-    }
-  };
+  // profile selection change
+  $(document).on('vclick', 'a.friend-profile-link', function(e) {
+    stopEvent(e);
+    ProfileCtrl._scope.selectProfile($(this).attr('data-friend-id'));
+  });
   
 })(jQuery);
