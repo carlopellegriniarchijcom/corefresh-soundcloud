@@ -61,31 +61,38 @@
           </div>
         </div>
         <div id="profile" data-role="page" data-theme="a" ng-app="ngView">
-          <div data-role="header" data-position="fixed" data-id="site-header">
-            <h1>SoundCloud Surfer</h1>
+          <div data-role="header" data-position="fixed">
+            <h1>(λχ.χ):((SoundCloud) ⇒ (Core Fresh))</h1>
           </div>
           <div id="profile-page-content" class="transparent" data-role="content" ng-view></div>
-          <div data-role="footer" data-position="fixed" data-id="site-footer">
+          <div data-role="footer" data-position="fixed">
             (λχ.χ)(Copyright &copy; 2013 • (λζ.ζ)(Aaron L. Stephanus));
           </div>
-          
-          <!-- 
-            Audio Player Controls Interface. Implemented as a jQuery Mobile Panel Widget
-            TODO: Consider whether or not audio should be stopped if the panel is swiped closed. 
-          -->
-          <div 
-            id="player-panel" 
-            data-role="panel" 
-            data-theme="a"
-            data-position="right" 
-            data-display="push"
-            data-position-fixed="true"
-          >
-            <header>
-              <h5>Now Playing <span id="track-title"></span></h5>
-            </header>
-           
-            <div id="audio-player-wrapper" class="clearfix"> 
+        </div><!-- /#profile -->
+        
+        <!-- 
+          Audio Player Controls Interface. Implemented as a jQuery Mobile Panel Widget
+          TODO: Consider whether or not audio should be stopped if the panel is swiped closed. 
+        -->
+        <div 
+          id="player" 
+          data-role="page" 
+          data-theme="a" 
+        >
+          <div data-role="header" data-theme="a" data-position="fixed">
+            <a href="#profile" data-role="button" data-icon="home">Back</a>
+            <h1>Now Playing</h1>
+            <a href="#" id="download-track-link" data-role="button" data-icon="arrow-d">Download</a>
+          </div>
+          <div data-role="content">
+            <ul id="current-track-meta-list" class="clearfix">
+	            <li><span id="track-title-icon" class="ir">Title</span><span id="track-title"></span></li>
+	            <li><span id="track-length-icon" class="ir">Length</span><span id="track-length"></span></li>
+	            <li><span id="track-genre-icon" class="ir">Genre</span><span id="track-genre"></span></li>
+	            <li><div id="track-tags-icon" class="ir">Tags</div><div id="track-tags"></div></li>
+	          </ul>
+	          
+	          <div id="audio-player-wrapper" class="clearfix"> 
 	            <div id="audio-player">
 	              <a href="#" id="rewind-button" class="disabled-button nocallout" title="Rewind">
 	                <span id="rewind-button-inner" class="ir">Rewind</span>
@@ -93,7 +100,7 @@
 	              <a href="#" id="play-pause-button" class="nocallout" title="Play">
 	                <span id="play-pause-button-inner" class="play-state ir">Play</span>
 	              </a>
-	              <a href="#" id="stop-button" class="disabled-button hidden-button nocallout" title="Stop">
+	              <a href="#" id="stop-button" class="disabled-button nocallout" title="Stop">
 	                <span id="stop-button-inner" class="ir">Stop</span>
 	              </a>
 	              <a href="#" id="forward-button" class="disabled-button nocallout" title="Fast Forward">
@@ -103,12 +110,15 @@
 	                <span id="volume-button-inner" class="ir">Volume</span>
 	              </a>
 	              <div id="audio-player-gutter">
+	                <div id="audio-player-loaded-indicator"></div>
 	                <div id="audio-player-scrubber">&nbsp;</div>
 	              </div>
 	            </div>
-	            <div id="current-track-artwork">
-	              <img>
+	            <div id="current-track-info">
+	              <img id="current-track-artwork" class="clearfix">
+	              <p id="current-track-description"></p>
 	            </div>
+	            
 	          </div>
 	          <div id="audio-comments" class="clearfix">
 	            <header>
@@ -116,11 +126,17 @@
 	            </header>
 	            <ul id="audio-comment-list"></ul>
 	          </div>
-          </div><!-- /#player-panel -->
-        </div><!-- /#profile -->
+          </div>
+          <div data-role="footer">
+            <a href="http://www.soundcloud.com">
+              <span id="footer-sound-cloud-logo" class="ir">SoundCloud</span>
+            </a>
+          </div>
+        </div><!-- /#player-page -->
       </main>
 
       <script src="js/jquery/plugins/jquery.cookie.js"></script>
+      <script src="js/jquery/plugins/jquery.restrain.js"></script>
       <script src="js/swipe_updown_events.js"></script>      
       <script src="js/angular/angular.js"></script>
       <script src="js/sm2/script/soundmanager2.js"></script>

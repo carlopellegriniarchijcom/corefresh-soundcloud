@@ -90,8 +90,6 @@
    */
   function SCUserProfile(data) {
     
-    console.debug('The data provided to the SCUserProfile constructor is as follows:');
-    console.debug(data);
     if (typeof(data) === 'object' && data !== null) {
       return copyObject(data, this);
     }
@@ -341,35 +339,201 @@
     return SCUserProfileCache._instance;
   };
 
+  /**
+   * @class The AudioController class manages an encapsulated SMSound object. Exposing features
+   *        to manipulate playback, volume, and handle events that are triggered by the SMSound object.
+   *        AudioController is a singleton and must not be instantiated directly. Use the 
+   *        <code>getInstance</code> static method.
+   */
   function AudioController() {
     
+    var DEFAULT_VOLUME = 66;
     var sound_object = null;
-    
-    this.setSoundObject = function(sound) {
-      if (sound_object !== null && sound_object.playState === 1) {
-        this.stop();
+    var playback_events = {
+        
+      /**
+       * Use the <code>whileloading</code> event to update the width
+       * of the &quot;loaded indicator&quot; for a visual representation
+       * of how much of the audio has been loaded. 
+       */
+      whileloading: function() {
+        if (this.bytesTotal === 0) {
+          return;
+        }
+        var pct = this.bytesLoaded / this.bytesTotal;
+        $('#audio-player-loaded-indicator').width(pct + '%');
+      },
+      
+      /**
+       * Use the <code>whileplaying</code> event to update the position
+       * of the &quot;scrubber&quot; during playback for a visual 
+       * representation of the position of the play head.
+       */
+      whileplaying: function() {
+        
+        var pct = 0;
+        
+        // If all data has completed downloading then use the 
+        // duration property to calculate the position percentage.
+        // Otherwise use the estimatedDuration property.
+        if (this.bytesLoaded === this.bytesTotal) {
+          pct = (this.position / this.duration);
+        }
+        else if (this.estimatedDuration > 0) {
+          pct = this.position / this.estimatedDuration;
+        }
+        else {
+          return;
+        }          
+        $('#audio-player-scrubber').css('left', pct + '%');
+      },
+      
+      /**
+       * Use the <code>onfinish</code> event to persist the volume level,
+       * reposition the scrubber to the beginning, reset the width of the
+       * &quot;loader indicator&quot; to zero, disable the forward/rewind
+       * buttons, and restore the play-pause button to play-state. (The
+       * &quot;play-state&quot; CSS class displays the &quot;Play&quot;
+       * button instead of the &quot;Pause&quot; button.)
+       * TODO: If there are more tracks in the profile's playlist then
+       * play the next track automatically. (Note: This may not be possible
+       * on mobile devices due to the limitation that sounds can only be 
+       * played in response to explicit user action. Perhapse display a 
+       * dialog asking the user to play the next track? Another idea is to
+       * return to the profile page and highlight the next track, or something.)
+       *
+       */
+      onfinish: function() {
+        
+        // Persist the volume.
+        writeToCookie('previous_volume', initial_volume);
+        
+        // Reset the scrubber
+        $('#audio-player-scrubber').css('left', '0px');
+        
+        // Reset the loader indicator width.
+        $('#audio-player-loaded-indicator').width(0);
+        
+        // Reset the play-pause button
+        $('#play-pause-button-inner').removeClass('pause-state').addClass('play-state');
+        
+        // Disable the forward/rewind, and stop buttons.
+        $('#rewind-button').addClass('disabled-button');
+        $('#forward-button').addClass('disabled-button');
+        $('#stop-button').addClass('disabled-button');
+        
+      },
+      
+      /**
+       * Use the <code>onplay</code> event to enable the disabled
+       * rewind, forward, and stop buttons.
+       */
+      onplay: function() {
+        $('#stop-button, #rewind-button, #forward-button').removeClass('disabled-button');
+      },
+      
+      /**
+       * Use the <code>onstop</code> event to disable the enabled
+       * rewind, forward, and stop buttons.
+       */
+      onstop: function() {
+        $('#stop-button, #rewind-button, #forward-button').addClass('disabled-button');
+      },
+      
+      /**
+       * Use the <code>onpause</code> event to change the pause button to a play button.
+       */
+      onpause: function() {
+        $('#play-pause-button').removeClass('pause-state').addClass('play-state');
+      },
+      
+      /**
+       * Use the <code>onresume</code> event to change the play button to a pause button.
+       */
+      onresume: function() {
+        $('#play-pause-button').removeClass('play-state').removeClass('pause-state');
       }
-      sound_object = sound;
+    };
+  
+    var initial_volume = readFromCookie('previous_volume');
+    if (isNaN(initial_volume) || !isInt(initial_volume) || (initial_volume === 0)) {
+      initial_volume = DEFAULT_VOLUME; // approximately 2/3 volume level.
+    }
+    else {
+      initial_volume = Number(initial_volume);
+    }
+    
+    /**
+     * Return a boolean indicating whether or not the SMSound object has been set.
+     * @returns {Boolean}
+     */
+    this.hasSoundObject = function() {
+      return (sound_object !== null);
+    };
+    
+    /**
+     * Return the readyState property of the encapsulated SMSound object, or zero
+     * if the sound object has yet to be set.
+     * @returns {integer}
+     */
+    this.getReadyState = function() {
+      if (sound_object !== null) {
+        return sound_object.readyState;
+      }
+      return 0;
+    };
+    
+    /**
+     * Set the SMSound object for managing playback of the audio stream from SoundCloud.
+     * @param {SMSound} sound
+     * @returns {AudioController}
+     */
+    this.setSoundObject = function(sound) {
+      try {
+        if (sound_object !== null && sound_object.playState === 1) {
+          this.stop();
+          sound_object = null;
+        }
+        sound_object = sound;
+        sound_object.setVolume(initial_volume);  
+      }
+      catch (ex) {
+        debugLog(ex);
+      }
       return this;
     };
     
+    /**
+     * Begin playback.
+     * @returns {AudioController}
+     */
     this.play = function() {
       if (sound_object === null) {
         return this;
       }
-      if (sound_object.paused === true) {
-        sound_object.resume();
-        return this;
+      try {
+        if (sound_object.paused === true) {
+          sound_object.resume();
+          return this;
+        }
+        if (sound_object.playState === 1) {
+          this.stop();
+        }
+        sound_object.play(playback_events);
       }
-      if (sound_object.playState === 1) {
-        this.stop();
+      catch (ex) {
+        debugLog(ex);
       }
-      sound_object.play();
+      
       return this;
     };
     
+    /**
+     * Pause playback.
+     * @returns {AudioController}
+     */
     this.pause = function() {
-      if (sound_object === null || sound_object.playState === 0) {
+      if (sound_object === null || sound_object.playState === 0 || sound_object.paused === true) {
         return this;
       }
       try {
@@ -381,7 +545,27 @@
       return this;
     };
     
+    /**
+     * Resume playback from a paused state.
+     * @returns {AudioController}
+     */
+    this.resume = function() {
+      if (sound_object === null || sound_object.playState === 0 || sound_object.paused === false) {
+        return this;
+      }
+      try {
+        sound_object.resume();
+      }
+      catch (ex) {
+        debugLog(ex);
+      }
+      return this;
+    };
     
+    /**
+     * Stop playback.
+     * @returns {AudioController}
+     */
     this.stop = function() {
       if (sound_object === null || sound_object.playState === 0) {
         return this;
@@ -395,12 +579,18 @@
       return this;
     };
     
+    /**
+     * Set the volume level.
+     * @param {integer} v
+     * @returns {AudioController}
+     */
     this.setVolume = function(v) {
       if (sound_object === null) {
         return this;
       }
       try {
         sound_object.setVolume(v);
+        initial_volume = v;
       }
       catch (ex) {
         debugLog(ex);
@@ -408,6 +598,14 @@
       return this;
     };
     
+    /**
+     * Set the playback position in milliseconds.
+     * If the specified position is beyond the currently loaded data
+     * then the request is queued, and when enough data is ready then
+     * the returned promise is resolved, and the position is changed.
+     * @param {integer} ms
+     * @returns {Promise}
+     */
     this.setPosition = function(ms) {
       var defer = $.Deferred();
       if (sound_object === null || !isInt(ms)) {
@@ -434,27 +632,68 @@
       return defer.promise();
     };
     
-    function queuePositionChange(ms, defer) {
+    /**
+     * @description Closure managing the position change request queue.
+     * @function
+     * @name queuePositionChange
+     * @param {integer} ms
+     * @param {Deferred} defer
+     * @inner
+     */
+    var queuePositionChange = (function() {
       
       var tid = 0;
       var INTERVAL = 1000;
+      var defered = null;
+      var requested_position = 0;
       
+      /**
+       * Interval timer callback.
+       * @inner
+       */
       function timeCheck() {
-        if (sound_object.duration >= ms) {
+        
+        // Return if a lingering interval fires after clearing.
+        if (tid === 0) {
+          return;
+        }
+        
+        // If enough data is available to change to the requested position
+        // then clear the timer, set the position.
+        if (sound_object.duration >= requested_position) {
           clearInterval(tid);
           tid = 0;
           try {
-            sound_object.setPosition(ms);
+            sound_object.setPosition(requested_position);
             defer.resolve(ms);
           }
           catch (ex) {
             debugLog(ex);
             defer.reject(ex.message);
           }
+          defer = null;
+          requested_position = 0;
         }
       }
-      setInterval(timeCheck, INTERVAL);
-    }
+      
+      return function(ms, defer) {
+        
+        // If a request is queued then cancel it.
+        if (tid !== 0) {
+          clearInterval(tid);
+          tid = 0;
+          defered.reject('cancelled');
+          defered = null;
+        }
+        
+        // Start a timer to poll for loaded data duration
+        // comparison to the requested position.
+        requested_position = ms;
+        defered = defer;
+        tid = setInterval(timeCheck, INTERVAL);
+      };
+      
+    })();
   }
   
   /**
@@ -500,7 +739,7 @@
      * @name selectProfile
      * @description Update the model to a new SoundCloud User Profile.
      * @param {integer|string} uid User ID of the SoundCloud profile.
-     * TODO: Update to use cached profiles if available.
+     * TODO: Test cached profile data feature.
      */
     $scope.selectProfile = function(uid) {
       if (!isInt(uid) || (uid == $scope.current_profile_uid)) {
@@ -641,14 +880,20 @@
         return;
       }
       
-      // Set the "Now Playing" track title.
+      // #debug
+      console.debug(track);
+      
+      // Set the "Now Playing" track title,
+      // genre, length, and tags.
       $('#track-title').text(track.title);
+      $('#track-genre').text(track.genre);
+      $('#track-length').text(msToHMS(track.duration));
+      $('#track-tags').text(track.tag_list).restrain();
       
-      // Set the track's artwork.
-      var artwork = $('#current-track-artwork');
-      debugLog(track);
-      $('img', artwork).attr('src', track.artwork_url);
-      
+      // Set the track's artwork, and description.
+      $('#current-track-artwork').attr('src', track.artwork_url || track.user.avatar_url);
+      $('#current-track-description').html(sanitize(track.description));
+        
       // Open the panel, and begin streaming.
       $('#player-panel').panel('open');
       beginTrackStreaming(track_id)
@@ -695,6 +940,78 @@
     });
     
   });
+  
+  
+  /**
+   * Sanitizes the string argument by converting special characters
+   * to HTML entities.
+   * @todo Integrate the OWASP ESAPI for JavaScript for a much more thorough method of sanitizing strings.
+   * @param {string} s
+   * @returns {string}
+   */
+  function sanitize(s) {
+    
+    /**
+     * Two dimensional array of unsafe characters mapped to their sanitized metonyms.
+     * @inner
+     * @type {Array}
+     */
+    var dirty_chars = [
+      ['<', '&lt;'], 
+      ['>', '&gt;'], 
+      ['&', '&amp;'], 
+      ['"', '&quot;'], 
+      ["'", '&#39;'], 
+      ["\\", '/']
+    ];
+    
+    /**
+     * Callback function executed for each character in the string to sanitize.
+     * @inner
+     * @param {string} c
+     * @param {number} index
+     * @param {Array} str
+     */
+    function cleanChar(c, index, str) {
+      
+      for (var i = 0; i < dirty_chars.length; ++i) {
+        if (c === dirty_chars[i][0]) {
+          str[index] = dirty_chars[i][1];
+          break;
+        }
+      }
+    }
+    
+    // Split the input string into a character array for mutability,
+    // sanitize, then return the joined character array as a string.
+    var chars = s.split('');
+    forEachEl(chars, cleanChar);
+    return chars.join('');
+  }
+  
+  
+  /**
+   * Format milliseconds to hours, minutes, and seconds (HH:MM:SS format).
+   * @param {integer} ms
+   * @returns {string}
+   */
+  function msToHMS(ms) {
+    if (!isInt(ms)) {
+      return '00:00:00';
+    }
+    
+    var seconds = Math.round(ms / 1000);
+    var minutes = Math.round(seconds / 60);
+    var hours = Math.round(minutes / 60);
+    
+    seconds -= (minutes * 60);
+    minutes -= (hours * 60);
+    return (
+      (hours > 9 ? hours : '0' + hours)
+      + ':' + (minutes > 9 ? minutes : '0' + minutes)
+      + ':' + (seconds > 9 ? seconds : '0' + seconds)
+    );
+  }
   
   function stopEvent(e) {
     e.preventDefault();
@@ -1036,11 +1353,27 @@
           changeHash: true,
           transition: 'pop'
         });
-        //$.mobile.navigate('#profile');
       }, TIMEOUT_MS);
     }, TIMEOUT_MS);
   });
   
+  
+  $(document).on('vclick', '.playable', function(e) {
+    stopEvent(e);
+    var track_id = $(this).attr('data-track-id');
+    if (!isInt(track_id)) {
+      debugLog('Invalid data-track-id attribute: ' + track_id);
+      return false;
+    }
+    debugLog('The selected track ID is ' + track_id);
+    $.mobile.changePage('#player', {
+      changeHash: true,
+      transition: 'slidefade'
+    });
+    //var audio_ctrl = AudioController.getInstance();
+    ProfileCtrl._scope.playTrack(track_id);
+    
+  });
   
   // Play/pause click event handler.
   $(document).on('vclick', '#play-pause-button', function(e) {

@@ -24,7 +24,7 @@
            of any track that may be playing already.
       -->
       <li ng-repeat="track in current_profile.tracks">
-        <a href="#" class="playable" data-track-id="{{track.id}}" title="{{track.title}}" data-ng-click="playTrack(track.id)">{{track.title}}</a>
+        <a href="#player-page" class="playable" data-track-id="{{track.id}}" title="{{track.title}}">{{track.title}}</a>
       </li>
     </ol>
   </section>

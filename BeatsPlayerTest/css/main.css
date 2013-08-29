@@ -209,22 +209,97 @@ textarea[contenteditable] {
  *
  ****************************************************************/
 
+#current-track-meta-list {
+	display: block;
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	list-style-type: none;
+}
+
+#current-track-meta-list > li {
+	display: block;
+	clear: both;
+	margin: 0;
+	padding: 0;
+	height: 24px;
+	width: 100%;
+	position: relative;
+}
+
+#current-track-meta-list > li > span,
+  #current-track-meta-list > li > div
+{
+	display: inline;
+	float: left;
+	clear: none;
+}
+#current-track-meta-list > li > span:last-child,
+  #current-track-meta-list > li > div:last-child
+{
+	font-size: 0.7em;
+	font-style: italic;
+	height: 24px;
+	line-height: 24px;
+	padding: 0 0 0 2px;
+	margin: 0;
+}
+
+#current-track-meta-list > li > span:first-child,
+  #current-track-meta-list > li > div:first-child
+{
+	background-color: transparent;
+	background-repeat: no-repeat;
+	background-attachment: scroll;
+	background-position: center center;
+	width: 24px;
+	height: 24px;
+	margin: 0;
+	padding: 0;
+}
+
+#track-title-icon {
+	background-image: url('../img/record-icon-24x24.png');
+}
+
+#track-length-icon {
+	background-image: url('../img/length-icon-24x24.png');
+}
+
+#track-genre-icon {
+	background-image: url('../img/genre-icon-24x24.png');
+}
+
+#track-tags-icon {
+	background-image: url('../img/tag-icon-24x24.png');
+}
+
+
+#track-tags {
+	max-width: 260px;
+}
+
 #audio-player {
 	width: 49.5%;
 	height: 270px;
 	float: left;
 }
 
-#current-track-avatar {
+#current-track-info {
 	width: 49.5%;
 	height: 270px;
 	float: right;
 	text-align: center;
 }
 
-#current-track-avatar > img {
-	display: inline-block;
-	margin: 0 auto;
+#current-track-description {
+	clear: both;
+	display: block;
+	width: 99%;
+	padding: 0.5%;
+	margin: 1em 0;
+	font-size: 0.6em;
+	text-align: justify;
 }
 
 /*
@@ -275,6 +350,14 @@ textarea[contenteditable] {
 	background-color: #333;
 	margin-top: 12px;
 	margin-left: 9px;
+}
+
+#audio-player-loaded-indicator {
+  width: 0;
+  height: 12px;
+  background-color: red;
+  margin: 0;
+  padding: 0;	
 }
 
 #audio-player-scrubber {
@@ -334,7 +417,37 @@ textarea[contenteditable] {
 	 * Adjust the width/height of the player control buttons to 96x96 pixels,
 	 * and use the high-density 96x96 images.
 	 */
-	 
+
+  #current-track-meta-list > li {
+	  height: 48px;
+	}
+	
+	#current-track-meta-list > li > span:last-child {
+	  height: 48px;
+	  line-height: 48px;
+	}
+	
+	#current-track-meta-list > li > span:first-child {
+	  width: 48px;
+	  height: 48px;
+	}
+	  	 
+	#track-title-icon {
+	  background-image: url('../img/record-icon-retina-48x48.png');
+	}
+	
+	#track-length-icon {
+	  background-image: url('../img/length-icon-retina-48x48.png');
+	}
+	
+	#track-genre-icon {
+	  background-image: url('../img/genre-icon-retina-48x48.png');
+	}
+	
+	#track-tags-icon {
+	  background-image: url('../img/tag-icon-retina-48x48.png');
+	}
+  
 	#audio-player a {
 	  width: 96px;
 	  height: 96px;
