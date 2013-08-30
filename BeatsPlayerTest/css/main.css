@@ -227,6 +227,26 @@ textarea[contenteditable] {
 	position: relative;
 }
 
+#current-track-meta-list > li.indent-level-0 {
+	top: 0;
+	left: 0;
+}
+
+#current-track-meta-list > li.indent-level-1 {
+  top: 0;
+  left: 1em;
+}
+
+#current-track-meta-list > li.indent-level-2 {
+  top: 0;
+  left: 2em;
+}
+
+#current-track-meta-list > li.indent-level-3 {
+  top: 0;
+  left: 3em;
+}
+
 #current-track-meta-list > li > span,
   #current-track-meta-list > li > div
 {
@@ -276,9 +296,10 @@ textarea[contenteditable] {
 
 
 #track-tags {
-	max-width: 260px;
+	width: 91.1%;
 }
 
+ 
 #audio-player {
 	width: 49.5%;
 	height: 270px;
@@ -349,7 +370,6 @@ textarea[contenteditable] {
 	position: relative;
 	background-color: #333;
 	margin-top: 12px;
-	margin-left: 9px;
 }
 
 #audio-player-loaded-indicator {
@@ -421,7 +441,27 @@ textarea[contenteditable] {
   #current-track-meta-list > li {
 	  height: 48px;
 	}
+  
+  /* #current-track-meta-list > li.indent-level-0 {
+	  top: 0;
+	  left: 0;
+	}
 	
+	#current-track-meta-list > li.indent-level-1 {
+	  top: 0;
+	  left: 48px;
+	}
+	
+	#current-track-meta-list > li.indent-level-2 {
+	  top: 0;
+	  left: 96px;
+	}
+	
+	#current-track-meta-list > li.indent-level-3 {
+	  top: 0;
+	  left: 144px;
+	} */
+		
 	#current-track-meta-list > li > span:last-child {
 	  height: 48px;
 	  line-height: 48px;

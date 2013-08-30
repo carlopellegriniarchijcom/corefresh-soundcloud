@@ -6,7 +6,7 @@
   
   function wordWidth(word) {
     var div = $('<div/>').css({
-      width: auto,
+      width: 'auto',
       height: this.height(),
       fontSize: this.css('font-size'),
       fontWeight: this.css('font-weight'),
@@ -22,6 +22,9 @@
     $('body').append(div);
     var width = div.width();
     div.remove();
+    
+    // #debug
+    console.debug('word width: ', width);
     return width;
   }
   
@@ -44,35 +47,42 @@
   
   $.fn.extend({
     
-    restrain: function(options) {
+    restrain: function() {
      
-      var defaults = {
-        plainText: true
-      };
-      
-      options = $.extend(defaults, options);
-      
       return this.each(function() {
         
-        var txt = this.text();
+        var $this = $(this);
+        var txt = $this.text();
         var split_txt = txt.split(/\s+/);
-        var parent_width = this.parent().width();
-        var parent_offset = this.parent().offset();
-        var offset = this.offset();
+        var parent_width = $this.parent().width();
+        var parent_offset = $this.parent().offset();
+        var offset = $this.offset();
         var left = offset.left - parent_offset.left;
         var max_width = parent_width - left;
         var word_width = 0;
         var line_width = 0;
         var html = '';
-        var line_height = this.height(); //measurement.call(this, 'line-height');
-        var font_size = measurement.call(this, 'font-size');
+        var line_height = $this.height(); //measurement.call(this, 'line-height');
+        var font_size = measurement.call($this, 'font-size');
+        
+        
+        // #debug
+        console.debug(txt);
+        console.debug(split_txt);
+        console.debug('parent_width: ', parent_width);
+        console.debug('parent_offset: ', parent_offset);
+        console.debug('offset: ', offset);
+        console.debug('left: ', left);
+        console.debug('max_width: ', max_width);
+        
+        
         if (font_size.units === 'em') {
           convertEmsToPixels(font_size);
         }
         for (var i = 0, l = split_txt.length; i < l; ++i) {
           
           // Calculate the width in pixels of the current word.
-          word_width = wordWidth.call(this, split_txt[i]);
+          word_width = wordWidth.call($this, split_txt[i]);
           
           // Add the width of the word to the width of the line.
           line_width += word_width;
@@ -83,9 +93,8 @@
           if (line_width >= max_width) {
             html += '<br>' + split_txt[i];
             
-            // Decrease the line height in half, or to the font size,
-            // if the adjusted/calculated line height is greater
-            // than the font size.
+            // Decrease the line height in half, or to the font size.
+            // Whichever is greater.
             if (line_height > font_size.measure) {
               line_height = Math.max(font_size.measure, (line_height / 2));
             }
@@ -97,9 +106,13 @@
           }
         }
         
-        this.text('');
-        this.html(html).css({
-          lineHeight: line_height + 'px'
+        // #debug
+        console.debug(html);
+        
+        $this.text('');
+        $this.html(html).css({
+          lineHeight: line_height + 'px',
+          width: max_width + 'px'
         });
       });
       

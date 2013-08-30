@@ -360,7 +360,11 @@
         if (this.bytesTotal === 0) {
           return;
         }
-        var pct = this.bytesLoaded / this.bytesTotal;
+        console.debug('bytesTotal: ', this.bytesTotal);
+        console.debug('bytesLoaded: ', this.bytesLoaded);
+        var pct = Math.round(this.bytesLoaded / this.bytesTotal * 100);
+        console.debug('Percentage: ', pct, '%');
+        
         $('#audio-player-loaded-indicator').width(pct + '%');
       },
       
@@ -377,14 +381,16 @@
         // duration property to calculate the position percentage.
         // Otherwise use the estimatedDuration property.
         if (this.bytesLoaded === this.bytesTotal) {
-          pct = (this.position / this.duration);
+          pct = Math.round(this.position / this.duration * 100);
         }
         else if (this.estimatedDuration > 0) {
-          pct = this.position / this.estimatedDuration;
+          pct = Math.round(this.position / this.estimatedDuration * 100);
         }
         else {
           return;
-        }          
+        }
+        console.debug('playing pct: ', pct, '%');
+        
         $('#audio-player-scrubber').css('left', pct + '%');
       },
       
@@ -888,7 +894,8 @@
       $('#track-title').text(track.title);
       $('#track-genre').text(track.genre);
       $('#track-length').text(msToHMS(track.duration));
-      $('#track-tags').text(track.tag_list).restrain();
+      //$('#track-tags').text(removeEntities(sanitize(track.tag_list))).restrain();
+      $('#track-tags').html(splitWords(track.tag_list, '<br>'));
       
       // Set the track's artwork, and description.
       $('#current-track-artwork').attr('src', track.artwork_url || track.user.avatar_url);
@@ -943,6 +950,16 @@
   
   
   /**
+   * @param {string} words
+   * @param {string} separator
+   * @returns {string}
+   */
+  function splitWords(words, separator) {
+    words = words.split(/\s+/);
+    return words.join(separator);
+  }
+  
+  /**
    * Sanitizes the string argument by converting special characters
    * to HTML entities.
    * @todo Integrate the OWASP ESAPI for JavaScript for a much more thorough method of sanitizing strings.
@@ -989,6 +1006,16 @@
     return chars.join('');
   }
   
+  /**
+   * @param {string} str
+   * @returns {string}
+   */
+  function removeEntities(str) {
+    if (typeof(str) !== 'string') {
+      return '';
+    }
+    return str.replace(/&#?[a-z0-9]+;/ig, '');
+  }
   
   /**
    * Format milliseconds to hours, minutes, and seconds (HH:MM:SS format).
@@ -1396,6 +1423,11 @@
         $this.fadeIn(FADE_TIME);
       });
     }
+  });
+
+  $(document).on('vclick', '#stop-button', function(e) {
+    stopEvent(e);
+    AudioController.getInstance().stop();
   });
   
   // profile selection change
