@@ -421,7 +421,7 @@
         $('#audio-player-loaded-indicator').width(0);
         
         // Reset the play-pause button
-        $('#play-pause-button-inner').removeClass('pause-state').addClass('play-state');
+        $('#play-pause-button-inner').addClass('play-state').removeClass('pause-state');
         
         // Disable the forward/rewind, and stop buttons.
         $('#rewind-button').addClass('disabled-button');
@@ -444,20 +444,22 @@
        */
       onstop: function() {
         $('#stop-button, #rewind-button, #forward-button').addClass('disabled-button');
+        $('#play-pause-button-inner').addClass('play-state').removeClass('pause-state');
       },
       
       /**
        * Use the <code>onpause</code> event to change the pause button to a play button.
        */
       onpause: function() {
-        $('#play-pause-button').removeClass('pause-state').addClass('play-state');
+        $('#play-pause-button').pulse('start');
       },
       
       /**
        * Use the <code>onresume</code> event to change the play button to a pause button.
        */
       onresume: function() {
-        $('#play-pause-button').removeClass('play-state').removeClass('pause-state');
+        //$('#play-pause-button').removeClass('pause-state').removeClass('play-state');
+        $('#play-pause-button').pulse('stop');
       }
     };
   
@@ -487,6 +489,31 @@
         return sound_object.readyState;
       }
       return 0;
+    };
+    
+    /**
+     * Return the current playback position in milliseconds.
+     * NaN is returned if there is no sound object, or if the
+     * audio is not playing.
+     * @returns {integer|NaN}
+     */
+    this.getPosition = function() {
+      if (sound_object === null || sound_object.playState === 0) {
+        return Number.NaN;
+      }
+      return sound_object.position;
+    };
+    
+    /**
+     * Return the duration of the audio in milliseconds, or estimated duration if the duration is not yet known.
+     * NaN is returned if there is no sound object.
+     * @returns {integer|NaN}
+     */
+    this.getDuration = function() {
+      if (sound_object === null || sound_object.playState === 0) {
+        return Number.NaN;
+      }
+      return (sound_object.duration || sound_object.estimatedDuration);
     };
     
     /**
@@ -906,6 +933,7 @@
       beginTrackStreaming(track_id)
         .done(function(sound) {
           AudioController.getInstance().setSoundObject(sound).play();
+          $('#play-pause-button-inner').addClass('pause-state').removeClass('play-state');
         })
         .fail(function(msg) {
           debugLog(msg);
@@ -1369,7 +1397,124 @@
     return o;
   }
 
+  /**
+   * Update the position of the player position scrubber using
+   * the position in milliseconds, and the duration of the audio
+   * in milliseconds.
+   * @param {integer} pos_ms
+   * @param {integer} duration_ms 
+   */
+  function updateScrubberPos(pos_ms, duration_ms) {
+    if (!isInt(pos_ms) || !isInt(duration_ms) || duration_ms === 0) {
+      return;
+    }
+    if (pos_ms > duration_ms) {
+      pos_ms = duration_ms;
+    }
+    
+    var pct = Math.round(pos_ms / duration_ms);
+    var gutter_width = $('#audio-player-gutter').width();
+    var scrubber_pos = Math.round(gutter_width * pct);
+    $('#audio-player-scrubber').css('left', scrubber_pos + 'px');
+  }
+  
+  /**
+   * Callback function executed when releasing the playhead position scrubber.
+   * @param {float} pct 
+   */
+  function positionScrubberRelease(pct) {
+    var ctrl = AudioController.getInstance();
+    var duration = ctrl.getDuration();
+    var pos = Math.round(duration * pct);
+    ctrl.setPosition(pos).done(function(ms) {
+      debugLog('position updated to ' + ms + ' milliseconds by dragging the scrubber.');
+    }).fail(function(status) {
+      debugLog(status);
+      if (status === 'cancelled') {
+        return;
+      }
+      // TODO: Replace alert with modal dialog.
+      alert(status);
+    });
+  }
+  
+  /**
+   * Callback function executed when releasing the playhead position scrubber.
+   * @param {float} pct
+   */
+  function volumeScrubberRelease(pct) {
+    AudioController.getInstance().setVolume(Math.round(pct * 100));
+  }
+
+  /**
+   * Callback function executed when dragging the volume level scrubber.
+   * @param {float} pct
+   */
+  function volumeScrubberDrag(pct) {
+    AudioController.getInstance().setVolume(Math.round(pct * 100));
+  }
+  
+  /**
+   * Manage playback position scrubber dragging.
+   * @param {MouseEvent} e
+   * @param {jQuery} scrubber
+   * @inner
+   */
+  function scrubberDragListen(e, scrubber, release_callback, drag_callback) {
+    
+    var current_mouse_pos = e.pageX;
+    var gutter = scrubber.parent('.gutter');
+    var gutter_width = gutter.width();
+    
+    /**
+     * Mouse up event handler.
+     * @param {MouseEvent} e
+     */
+    function release(e) {
+      if (e.stopPropagation) {
+        e.stopPropagation();
+      } else {
+        e.cancelBubble = true;
+      }
+      $(document).off('vmousemove', drag);
+      
+      var scrubber_pos = parseInt(scrubber.css('left'));
+      var pct = scrubber_pos / gutter_width;
+      if ($.isFunction(release_callback)) {
+        release_callback(pct);
+      }
+    }
+    
+    /**
+     * Mouse move event handler.
+     * @param {MouseEvent} e
+     */
+    function drag(e) {
+      var mouse_pos = e.pageX;
+      var pos_delta = (mouse_pos - current_mouse_pos);
+      var pct = 0;
+      if (pos_delta > 0) {
+        pct = current_mouse_pos / mouse_pos; 
+      }
+      else {
+        pct = mouse_pos / current_mouse_pos;
+      }
+      scrubber.css('left', Math.round(pct * 100) + '%');
+      if ($.iFunction(drag_callback)) {
+        drag_callback(pct);
+      }
+    }
+    
+    $(document).on('vmousemove', drag).one('vmouseup', release);
+  }
+  
+  //
+  // Splash page initialization.
+  //
   $(document).one('pageinit', '#splash', function(e) {
+    
+    // Show the logo, rotate it and fade it out,
+    // then change page to the Profile page.
     var TIMEOUT_MS = 2000;
     var $logo = $('#splash-content > div');
     $logo.addClass('opaque').removeClass('transparent');
@@ -1384,8 +1529,27 @@
     }, TIMEOUT_MS);
   });
   
+  //
+  // Player page initialization.
+  //
+  $(document).one('pageinit', '#player', function(e) {
+    
+    // Apply the Pulse plugin to the play/pause button.
+    $('#play-pause-button').pulse({
+      autoStart: false,
+      pulseTime: 2000,
+      opacityMin: 0.5,
+      opacityMax: 1
+    });
+  });
   
+  //
+  // Track selection event handler.
+  //
   $(document).on('vclick', '.playable', function(e) {
+    
+    // Load the Player page with the selected track,
+    // and start playing the audio.
     stopEvent(e);
     var track_id = $(this).attr('data-track-id');
     if (!isInt(track_id)) {
@@ -1397,9 +1561,7 @@
       changeHash: true,
       transition: 'slidefade'
     });
-    //var audio_ctrl = AudioController.getInstance();
     ProfileCtrl._scope.playTrack(track_id);
-    
   });
   
   // Play/pause click event handler.
@@ -1412,14 +1574,14 @@
     if (inner.hasClass('play-state')) {
       audio_ctrl.play();
       $this.fadeOut(FADE_TIME, function() {
-        inner.removeClass('play-state').addClass('pause-state');
+        inner.addClass('pause-state').removeClass('play-state');
         $this.fadeIn(FADE_TIME);
       });
     }
     else if (inner.hasClass('pause-state')) {
       audio_ctrl.pause();
       $this.fadeOut(FADE_TIME, function() {
-        inner.removeClass('pause-state').addClass('play-state');
+        inner.addClass('play-state').removeClass('pause-state');
         $this.fadeIn(FADE_TIME);
       });
     }
@@ -1428,6 +1590,91 @@
   $(document).on('vclick', '#stop-button', function(e) {
     stopEvent(e);
     AudioController.getInstance().stop();
+  });
+  
+  $(document).on('vclick', '#forward-button,#rewind-button', function(e) {
+    stopEvent(e);
+    var ctrl = AudioController.getInstance();
+    var duration = ctrl.getDuration();
+    var position = ctrl.getPosition();
+    if (isNaN(duration) || isNaN(position)) {
+      return;
+    }
+    var remaining = (duration - position);
+    if (remaining === 0) {
+      return;
+    }
+    var POSITION_DELTA = 5000; // 5 seconds.
+    var $this = $(this);
+    var new_pos = (
+      ($this.attr('id') === 'forward-button') 
+        ? Math.min(remaining, (position + POSITION_DELTA))
+        : Math.max(0, (position - POSITION_DELTA))
+    );
+    ctrl.setPosition(new_pos).done(function(pos) {
+      updateScrubberPos(pos, duration);
+    }).fail(function(status) {
+      debugLog(status);
+      if (status === 'cancelled') {
+        return;
+      }
+      // TODO: Replace this alert() with a dialog box.
+      alert(status);
+    });
+  });
+  
+  $(document).on('vmousedown', '#audio-player-scrubber', function(e) {
+    stopEvent(e);
+    scrubberDragListen(e, $(this), positionScrubberRelease);
+  });
+  
+  $(document).on('vclick', '#volume-button', function(e) {
+    stopEvent(e);
+    $('#volume-controls').toggleClass('shown');
+  });
+  
+  $(document).on('vclick', '#volume-controls', function(e) {
+    stopEvent(e);
+    var $this = $(this);
+    var offset = e.pageX - parseInt($this.css('left'));
+    var width = $this.width();
+    var pct = Math.round(offset / width * 100);
+    var HIDE_TIMEOUT = 2000;
+    $('#volume-scrubber').css('left', offset + 'px');
+    AudioController.getInstance().setVolume(pct);
+    setTimeout(function() {
+      $this.toggleClass('shown');
+    }, HIDE_TIMEOUT);
+  });
+  
+  $(document).on('vmousedown', '#volume-scrubber', function(e) {
+    if (e.stopPropagation) {
+      e.stopPropagation();
+    } else {
+      e.cancelBubble = true;
+    }
+    scrubberDragListen(e, $(this), volumeScrubberRelease, volumeScrubberDrag);
+  });
+  
+  $(document).on('vclick', '#audio-player-loaded-indicator', function(e) {
+    stopEvent(e);
+    var gutter = $('#audio-player-gutter');
+    var gutter_width = gutter.width();
+    var gutter_offset = gutter.offset();
+    var x = e.pageX - gutter_offset.left;
+    var pct = (x / gutter_width);
+    var ctrl = AudioController.getInstance();
+    var duration = ctrl.getDuration();
+    var pos = Math.round(duration * pct);
+    ctrl.setPosition(pos).done(function(ms) {
+      updateScrubberPos(ms, duration);
+    }).fail(function(status) {
+      if (status === 'cancelled') {
+        return;
+      }
+      // TODO: Replace alert with dialog.
+      alert(status);
+    });
   });
   
   // profile selection change

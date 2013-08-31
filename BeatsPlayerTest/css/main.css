@@ -261,7 +261,7 @@ textarea[contenteditable] {
 	font-style: italic;
 	height: 24px;
 	line-height: 24px;
-	padding: 0 0 0 2px;
+	padding: 0 0 0 12px;
 	margin: 0;
 }
 
@@ -297,6 +297,9 @@ textarea[contenteditable] {
 
 #track-tags {
 	width: 91.1%;
+	position: relative;
+	left: 24px;
+	top: -24px;
 }
 
  
@@ -364,45 +367,126 @@ textarea[contenteditable] {
 	background-image: url('../img/volume-button-48x48.png');
 }
 
+#volume-controls {
+	opacity: 0;
+	position: relative;
+	top: -24px;
+	left: 48px;
+	height: 6px;
+	width: 0px;
+	border-style: solid;
+	border-width: 1px;
+	border-color: #600;
+	background-color: #600;
+	-webkit-border-radius: 3px;
+	-moz-border-radius: 3px;
+	-ms-border-radius: 3px;
+	-o-border-radius: 3px;
+	border-radius: 3px;
+	-webkit-transition: width 2s, opacity 2s;
+	-moz-transition: width 2s, opacity 2s;
+	-ms-transition: width 2s, opacity 2s;
+	-o-transition: width 2s, opacity 2s;
+	transition: width 2s, opacity 2s;
+}
+
+#volume-controls.shown {
+	opacity: 1;
+	width: 60%;
+	-webkit-transition: width, opacity 2s;
+	-moz-transition: width 2s, opacity 2s;
+	-ms-transition: width 2s, opacity 2s;
+	-o-transition: width 2s, opacity 2s;
+	transition: width 2s, opacity 2s;
+}
+
+#volume-scrubber {
+	background-image: linear-gradient(left top, rgb(2,73,0) 1%, rgb(89,255,60) 50%, rgb(3,199,0) 36%);
+  background-image: -o-linear-gradient(left top, rgb(2,73,0) 1%, rgb(89,255,60) 50%, rgb(3,199,0) 36%);
+  background-image: -moz-linear-gradient(left top, rgb(2,73,0) 1%, rgb(89,255,60) 50%, rgb(3,199,0) 36%);
+  background-image: -webkit-linear-gradient(left top, rgb(2,73,0) 1%, rgb(89,255,60) 50%, rgb(3,199,0) 36%);
+  background-image: -ms-linear-gradient(left top, rgb(2,73,0) 1%, rgb(89,255,60) 50%, rgb(3,199,0) 36%);
+
+  background-image: -webkit-gradient(
+    linear,
+    left top,
+    right bottom,
+    color-stop(0.01, rgb(2,73,0)),
+    color-stop(0.5, rgb(89,255,60)),
+    color-stop(0.36, rgb(3,199,0))
+  );
+  border-style: solid;
+  border-width: 1px;
+  border-color: #600;
+  -webkit-border-radius: 50%;
+  -moz-border-radius: 50%;
+  -ms-border-radius: 50%;
+  -o-border-radius: 50%;
+  border-radius: 50%;
+  position: absolute;
+  left: 64%;
+  top: -4px;
+  height: 0.75em;
+  width: 0.75em;
+}
+
 #audio-player-gutter {
-	width: 100%;
-	height: 12px;
+	width: 91.5%;
+	height: 0.75em;
 	position: relative;
 	background-color: #333;
-	margin-top: 12px;
+	margin-top: 0.75em;
+	border-style: solid;
+	border-width: 0.2em;
+	border-color: #333;
+	-webkit-border-radius: 0.2em;
+	-moz-border-radius: 0.2em;
+	-o-border-radius: 0.2em;
+	-ms-border-radius: 0.2em;
+	border-radius: 0.2;
 }
 
 #audio-player-loaded-indicator {
   width: 0;
-  height: 12px;
-  background-color: red;
+  height: 0.75em;
+  background-color: #600;
+  border-style: solid;
+  border-color: #600;
+  border-width: 0.1em;
+  -webkit-border-radius: 0.2em;
+  -moz-border-radius: 0.2em;
+  -ms-border-radius: 0.2em;
+  -o-border-radius: 0.2em;
+  border-radius: 0.125em;
   margin: 0;
   padding: 0;	
 }
 
 #audio-player-scrubber {
 	position: absolute;
-	top: -12px;
+	top: -0.375em;
 	left: 0;
-	width: 24px;
-	height: 24px;
+	width: 1.5em;
+	height: 1.5em;
 	border-style: solid;
+	border-width: 0.1em;
+	border-color: #600;
 	-webkit-border-radius: 50%;
 	-moz-border-radius: 50%;
 	-o-border-radius: 50%;
 	border-radius: 50%;
-	background-image: linear-gradient(left top, rgb(2,73,0) 1%, rgb(89,255,60) 60%, rgb(3,199,0) 36%);
-	background-image: -o-linear-gradient(left top, rgb(2,73,0) 1%, rgb(89,255,60) 60%, rgb(3,199,0) 36%);
-	background-image: -moz-linear-gradient(left top, rgb(2,73,0) 1%, rgb(89,255,60) 60%, rgb(3,199,0) 36%);
-	background-image: -webkit-linear-gradient(left top, rgb(2,73,0) 1%, rgb(89,255,60) 60%, rgb(3,199,0) 36%);
-	background-image: -ms-linear-gradient(left top, rgb(2,73,0) 1%, rgb(89,255,60) 60%, rgb(3,199,0) 36%);
+	background-image: linear-gradient(left top, rgb(2,73,0) 1%, rgb(89,255,60) 50%, rgb(3,199,0) 36%);
+	background-image: -o-linear-gradient(left top, rgb(2,73,0) 1%, rgb(89,255,60) 50%, rgb(3,199,0) 36%);
+	background-image: -moz-linear-gradient(left top, rgb(2,73,0) 1%, rgb(89,255,60) 50%, rgb(3,199,0) 36%);
+	background-image: -webkit-linear-gradient(left top, rgb(2,73,0) 1%, rgb(89,255,60) 50%, rgb(3,199,0) 36%);
+	background-image: -ms-linear-gradient(left top, rgb(2,73,0) 1%, rgb(89,255,60) 50%, rgb(3,199,0) 36%);
 
 	background-image: -webkit-gradient(
 	  linear,
 	  left top,
 	  right bottom,
 	  color-stop(0.01, rgb(2,73,0)),
-	  color-stop(0.6, rgb(89,255,60)),
+	  color-stop(0.5, rgb(89,255,60)),
 	  color-stop(0.36, rgb(3,199,0))
 	);
 }
