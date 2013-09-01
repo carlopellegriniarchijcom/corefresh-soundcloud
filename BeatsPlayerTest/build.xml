@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="aarons-soundcloud-player" basedir=".">
-    <property name="REMOTE_BASE" value="root@aaronstephanus.com:/var/www/vhosts/moveremus.com/httpdocs/beatsmusic/"/>
+    <property name="REMOTE_BASE" value="root@aaronstephanus.com:/var/www/vhosts/corefresh.aaronstephanus.com/httpdocs/"/>
 
   <target name="css">
   	<echo message="Uploading CSS files to the remote host."/>

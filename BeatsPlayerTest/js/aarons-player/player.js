@@ -360,11 +360,7 @@
         if (this.bytesTotal === 0) {
           return;
         }
-        console.debug('bytesTotal: ', this.bytesTotal);
-        console.debug('bytesLoaded: ', this.bytesLoaded);
         var pct = Math.round(this.bytesLoaded / this.bytesTotal * 100);
-        console.debug('Percentage: ', pct, '%');
-        
         $('#audio-player-loaded-indicator').width(pct + '%');
       },
       
@@ -388,9 +384,7 @@
         }
         else {
           return;
-        }
-        console.debug('playing pct: ', pct, '%');
-        
+        }        
         $('#audio-player-scrubber').css('left', pct + '%');
       },
       
@@ -445,12 +439,20 @@
       onstop: function() {
         $('#stop-button, #rewind-button, #forward-button').addClass('disabled-button');
         $('#play-pause-button-inner').addClass('play-state').removeClass('pause-state');
+        $('#audio-player-scrubber').css('left', 0);
+        AudioController.getInstance().setPosition(0).fail(function(status) {
+          debugLog('Failed to set SMSound position in stop event.');
+          debugLog(status);
+        });
       },
       
       /**
        * Use the <code>onpause</code> event to change the pause button to a play button.
        */
       onpause: function() {
+        
+        // #debug
+        debugLog('Starting pulse on play-pause-button...');
         $('#play-pause-button').pulse('start');
       },
       
@@ -458,7 +460,8 @@
        * Use the <code>onresume</code> event to change the play button to a pause button.
        */
       onresume: function() {
-        //$('#play-pause-button').removeClass('pause-state').removeClass('play-state');
+        // #debug
+        debugLog('Stopping pulse on play-pause-button...');
         $('#play-pause-button').pulse('stop');
       }
     };
@@ -812,7 +815,7 @@
       
         $.mobile.changePage('#profile', {
           allowSamePageTransitions: true,
-          changeHash: false,
+          changeHash: true,
           transition: 'slidedown'
         });
         
@@ -860,10 +863,10 @@
                     // For some reason I need to do this, and I haven't
                     // figured out why yet. Possibly this has something to
                     // do with using jQM with Angular. Not sure!
+                    // TODO: FIGURE THIS OUT!!!!
                     window.history.back();
                     
                     setTimeout(function() {
-                      debugLog('Triggering the create event...');
                       $('#profile-page-content')
                         .trigger('create');
                       setTimeout(function() {
@@ -912,9 +915,6 @@
         debugLog('There is no track in the current profile with the specified ID: ' + track_id);
         return;
       }
-      
-      // #debug
-      console.debug(track);
       
       // Set the "Now Playing" track title,
       // genre, length, and tags.
@@ -1094,7 +1094,30 @@
     //
     // TODO: Display modal dialog with some sort of friendly error message.
     //
+    alert('UGH!');
   }
+  
+  /**
+   * Facade for Array.prototype.indexOf functionality.
+   * If the <code>indexOf</code> method is defined in the <code>Array</code>'s
+   * prototype then it is used directly. Otherwise the feature is mimicked using
+   * a for loop and strict equality comparison.
+   * @param {Array} a
+   * @param {any} el
+   * @returns {integer}
+   */
+  function getIndexOf(a, el) {
+    if ($.isFunction(a.indexOf)) {
+      return a.indexOf(el);
+    }
+    for (var i = 0, l = a.length; i < l; ++i) {
+      if (a[i] === el) {
+        return i;
+      }
+    }
+    return -1;
+  }
+  
   
   /**
    * Facade for the Array.prototype.forEach functionality.
@@ -1443,7 +1466,7 @@
    * @param {float} pct
    */
   function volumeScrubberRelease(pct) {
-    AudioController.getInstance().setVolume(Math.round(pct * 100));
+    AudioController.getInstance().setVolume(Math.min(100, Math.round(pct * 100)));
   }
 
   /**
@@ -1451,7 +1474,7 @@
    * @param {float} pct
    */
   function volumeScrubberDrag(pct) {
-    AudioController.getInstance().setVolume(Math.round(pct * 100));
+    AudioController.getInstance().setVolume(Math.min(100, Math.round(pct * 100)));
   }
   
   /**
@@ -1462,7 +1485,6 @@
    */
   function scrubberDragListen(e, scrubber, release_callback, drag_callback) {
     
-    var current_mouse_pos = e.pageX;
     var gutter = scrubber.parent('.gutter');
     var gutter_width = gutter.width();
     
@@ -1477,11 +1499,13 @@
         e.cancelBubble = true;
       }
       $(document).off('vmousemove', drag);
-      
-      var scrubber_pos = parseInt(scrubber.css('left'));
-      var pct = scrubber_pos / gutter_width;
+      var scrubber_width = scrubber.width();
+      var scrubber_pct = Math.round(scrubber_width / gutter_width * 100);
+      var offset = (e.pageX - gutter.offset().left - Math.round(scrubber_width / 2));
+      var pct = Math.min((100 - scrubber_pct), Math.round(offset / gutter_width * 100));
+      //scrubber.css('left', pct + '%');
       if ($.isFunction(release_callback)) {
-        release_callback(pct);
+        release_callback(pct / 100);
       }
     }
     
@@ -1490,18 +1514,12 @@
      * @param {MouseEvent} e
      */
     function drag(e) {
-      var mouse_pos = e.pageX;
-      var pos_delta = (mouse_pos - current_mouse_pos);
-      var pct = 0;
-      if (pos_delta > 0) {
-        pct = current_mouse_pos / mouse_pos; 
-      }
-      else {
-        pct = mouse_pos / current_mouse_pos;
-      }
-      scrubber.css('left', Math.round(pct * 100) + '%');
-      if ($.iFunction(drag_callback)) {
-        drag_callback(pct);
+  
+      var offset = (e.pageX - gutter.offset().left - Math.round(scrubber.width() / 2));
+      var pct = Math.min(100, Math.round(offset / gutter_width * 100));
+      scrubber.css('left', pct + '%');
+      if ($.isFunction(drag_callback)) {
+        drag_callback(pct / 100);
       }
     }
     
@@ -1538,7 +1556,7 @@
     $('#play-pause-button').pulse({
       autoStart: false,
       pulseTime: 2000,
-      opacityMin: 0.5,
+      opacityMin: 0.3,
       opacityMax: 1
     });
   });
@@ -1629,25 +1647,34 @@
   });
   
   $(document).on('vclick', '#volume-button', function(e) {
+    if (e.currentTarget.getAttribute('id') !== 'volume-button') {
+      return;
+    }
     stopEvent(e);
     $('#volume-controls').toggleClass('shown');
   });
   
-  $(document).on('vclick', '#volume-controls', function(e) {
-    stopEvent(e);
-    var $this = $(this);
-    var offset = e.pageX - parseInt($this.css('left'));
-    var width = $this.width();
-    var pct = Math.round(offset / width * 100);
-    var HIDE_TIMEOUT = 2000;
-    $('#volume-scrubber').css('left', offset + 'px');
-    AudioController.getInstance().setVolume(pct);
-    setTimeout(function() {
-      $this.toggleClass('shown');
-    }, HIDE_TIMEOUT);
-  });
-  
+//  $(document).on('vclick', '#volume-controls', function(e) {
+//    if (e.currentTarget.getAttribute('id') !== 'volume-controls') {
+//      return;
+//    }
+//    stopEvent(e);
+//    var $this = $(this);
+//    var offset = e.pageX - parseInt($this.css('left'));
+//    var width = $this.width();
+//    var pct = Math.round(offset / width * 100);
+//    var HIDE_TIMEOUT = 2000;
+//    $('#volume-scrubber').css('left', pct + '%');
+//    AudioController.getInstance().setVolume(Math.min(100, pct));
+//    setTimeout(function() {
+//      $this.toggleClass('shown');
+//    }, HIDE_TIMEOUT);
+//  });
+//  
   $(document).on('vmousedown', '#volume-scrubber', function(e) {
+    if (e.currentTarget.getAttribute('id') !== 'volume-scrubber') {
+      return;
+    }
     if (e.stopPropagation) {
       e.stopPropagation();
     } else {
@@ -1657,6 +1684,9 @@
   });
   
   $(document).on('vclick', '#audio-player-loaded-indicator', function(e) {
+    if (e.currentTarget.getAttribute('id') !== 'audio-player-loaded-indicator') {
+      return;
+    }
     stopEvent(e);
     var gutter = $('#audio-player-gutter');
     var gutter_width = gutter.width();

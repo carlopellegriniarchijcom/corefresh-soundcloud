@@ -76,7 +76,7 @@
       this.minimum_opacity = DEFAULT_MIN_OPACITY;
       this.maximum_opacity = DEFAULT_MAX_OPACITY;
     }
-    this.delta = ((this.maximum_opacity - this.minimum_opacity) / (this.time / 2));
+    this.delta = 0.01;
   }
   
   /**
@@ -112,6 +112,7 @@
           }
       }
       p.element.css('opacity', opacity);
+      p.element.children().css('opacity', opacity);
     }
     
     if (!(p instanceof Pulsar)) {
@@ -120,7 +121,9 @@
     if (p.timer_id !== 0 && p.timer_id !== null) {
       return;
     }
-    p.timer_id = setInterval(callback, p.time);
+    var timeout = Math.round(Math.sqrt(p.time / p.delta) / 10);
+    p.timer_id = setInterval(callback, timeout);
+    
   };
   
   /**
@@ -184,6 +187,9 @@
     }
     clearInterval(this.timer_id);
     this.timer_id = 0;
+    
+    // Restore full opacity to the element.
+    this.element.css('opacity', 1);
   };
   
 //
@@ -204,9 +210,9 @@
      * @param {string|Object} arg0 Either the operation to perform ('start' or 'stop'), or an initialization options Object.
      * @returns {jQuery}
      */
-    pulse: function(/* [operation:string | options:Object] */) {
+    pulse: function(/* [operation:string | options:Object] */ arg0) {
 
-      var DATA_KEY = Pulsar.constructor.name;
+      var DATA_KEY = 'Pulsar';
       var operation = '';
       var defaults = {
         autoStart: true,
@@ -216,10 +222,10 @@
       };
       
       if (arguments.length > 0) {
-        if (typeof(arguments[0]) === 'object' && arguments[0] !== null) {
-          defaults = $.extend(defaults, arguments[0]);
-        } else if (typeof(arguments[0]) === 'string' && (arguments[0] === 'start' || arguments[0] === 'stop')) {
-          operation = arguments[0];
+        if (typeof(arg0) === 'string') {
+          operation = arg0;
+        } else if (typeof(arg0) === 'object' && arg0 !== null) {
+          defaults = $.extend(defaults, arg0);
         }
       }
       
@@ -235,6 +241,7 @@
               return;
             }
             p = $this.data(DATA_KEY);
+            
             if (p instanceof Pulsar) {
               p.stop();
             }
@@ -256,9 +263,9 @@
             break;
             
           default:
+            p = new Pulsar($this, defaults.pulseTime, defaults.opacityMin, defaults.opacityMax);
+            $this.data(DATA_KEY, p);
             if (defaults.autoStart === true) {
-              p = new Pulsar($this, defaults.pulseTime, defaults.opacityMin, defaults.opacityMax);
-              $this.data(DATA_KEY, p);
               p.start();
             }
         }
