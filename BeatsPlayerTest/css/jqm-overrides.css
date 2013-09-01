@@ -33,3 +33,9 @@
 	  font-size: 0.8em;
 	}
 }
+
+@media only screen and (min-width: 800px) {
+	.ui-mobile [data-role="page"], .ui-mobile [data-role="dialog"], .ui-page {
+	  position: static;
+	}
+}

@@ -316,7 +316,11 @@ textarea[contenteditable] {
 	  top: 0;
 	}
 }
- 
+
+#audio-player-wrapper {
+	position: relative;
+} 
+
 #audio-player {
 	width: 49.5%;
 	height: 270px;
@@ -331,8 +335,15 @@ textarea[contenteditable] {
 	position: absolute;
 	right: 0;
 	left: auto;
-	top: 0;
+	top: -6em;
 	bottom: auto;
+}
+
+@media only screen and (-webkit-min-device-pixel-ratio: 1.5),
+       only screen and (min-resolution: 144dpi) {
+  #current-track-info {
+    top: -12em;
+  }       
 }
 
 #current-track-description {
