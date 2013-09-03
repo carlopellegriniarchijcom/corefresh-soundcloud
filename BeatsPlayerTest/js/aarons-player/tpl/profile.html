@@ -1,8 +1,7 @@
-<!-- This bit is managed using Angular -->
-<article class="sound-cloud-profile" ng-model="current_profile">
+<article class="sound-cloud-profile" data-ng-model="current_profile">
   <header>
     <hgroup>
-      <h2 class="profile-avatar"><img ng-src="{{current_profile.avatar_url}}" alt=""></h2>
+      <h2 class="profile-avatar"><img data-ng-src="{{current_profile.avatar_url}}" alt=""></h2>
       <h3 class="profile-fullname">{{current_profile.full_name}}</h3>
     </hgroup>
   </header>
@@ -23,7 +22,7 @@
            and begins playback of the selected track, first stopping playback
            of any track that may be playing already.
       -->
-      <li ng-repeat="track in current_profile.tracks">
+      <li data-ng-repeat="track in current_profile.tracks">
         <a href="#player-page" class="playable" data-track-id="{{track.id}}" title="{{track.title}}">{{track.title}}</a>
       </li>
     </ol>
@@ -38,14 +37,14 @@
           data-icon="forward"
           data-theme="b"
         >
-          <li ng-repeat="follower in current_profile.followers">
+          <li data-ng-repeat="follower in current_profile.followers" class="profile-selector">
             <a 
               href="#" 
               class="friend-profile-link" 
               title="{{follower.full_name}}"
               data-friend-id="{{follower.id}}"
             >
-              <img ng-src="{{follower.avatar_url}}" alt=""><strong>{{follower.full_name}}</strong>
+              <img data-ng-src="{{follower.avatar_url}}" alt=""><strong>{{follower.full_name}}</strong>
             </a>
           </li>
         </ul>
@@ -58,14 +57,14 @@
           data-icon="forward"
           data-theme="b"
         >
-          <li ng-repeat="following in current_profile.followings">
+          <li data-ng-repeat="following in current_profile.followings">
             <a 
               href="#"
-              class="friend-profile-link"
+              class="profile-selector"
               title="{{following.full_name}}"
-              data-friend-id="{{following.id"
+              data-friend-id="{{following.id}}"
             >
-              <img ng-src="{{following.avatar_url}}" alt=""><strong>{{following.full_name}}</strong>
+              <img data-ng-src="{{following.avatar_url}}" alt=""><strong>{{following.full_name}}</strong>
             </a>
           </li>
         </ul>

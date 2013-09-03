@@ -55,88 +55,17 @@
     </head>
     <body>
 
+      <!-- main is used as the page container for all pages. 
+           The initial/default page is a splash page.
+      -->
       <main>
         <div id="splash" data-role="page" data-theme="a">
           <div data-role="content" id="splash-content">
             <div class="ir transparent">SoundCloud Surfer</div>
+            <br>
+            <div class="transparent">Core Fresh</div>
           </div>
         </div>
-        <div id="profile" data-role="page" data-theme="a" ng-app="ngView">
-          <div data-role="header" data-position="fixed">
-            <h1>(λχ.χ):((SoundCloud) ⇒ (Core Fresh))</h1>
-          </div>
-          <div id="profile-page-content" class="transparent" data-role="content" ng-view></div>
-          <div data-role="footer" data-position="fixed">
-            (λχ.χ)(Copyright &copy; 2013 • (λζ.ζ)(Aaron L. Stephanus));
-          </div>
-        </div><!-- /#profile -->
-        
-        <!-- 
-          Audio Player Controls Interface. Implemented as a jQuery Mobile Panel Widget
-          TODO: Consider whether or not audio should be stopped if the panel is swiped closed. 
-        -->
-        <div 
-          id="player" 
-          data-role="page" 
-          data-theme="a" 
-        >
-          <div data-role="header" data-theme="a" data-position="fixed">
-            <a href="#profile" data-role="button" data-icon="home">Back</a>
-            <h1>Now Playing</h1>
-            <a href="#" id="download-track-link" data-role="button" data-icon="arrow-d">Download</a>
-          </div>
-          <div data-role="content">
-            <ul id="current-track-meta-list" class="clearfix">
-	            <li class="indent-level-0"><span id="track-title-icon" class="ir">Title</span><span id="track-title"></span></li>
-	            <li class="indent-level-1"><span id="track-length-icon" class="ir">Length</span><span id="track-length"></span></li>
-	            <li class="indent-level-2"><span id="track-genre-icon" class="ir">Genre</span><span id="track-genre"></span></li>
-	            <li class="clearfix indent-level-3"><div id="track-tags-icon" class="ir">Tags</div><div id="track-tags"></div></li>
-	          </ul>
-	          
-	          <div id="audio-player-wrapper" class="clearfix"> 
-	            <div id="audio-player">
-	              <a href="#" id="rewind-button" class="disabled-button nocallout" title="Rewind">
-	                <span id="rewind-button-inner" class="ir">Rewind</span>
-	              </a>
-	              <a href="#" id="play-pause-button" class="nocallout" title="Play">
-	                <span id="play-pause-button-inner" class="play-state ir">Play</span>
-	              </a>
-	              <a href="#" id="stop-button" class="disabled-button nocallout" title="Stop">
-	                <span id="stop-button-inner" class="ir">Stop</span>
-	              </a>
-	              <a href="#" id="forward-button" class="disabled-button nocallout" title="Fast Forward">
-	                <span id="forward-button-inner" class="ir">Forward</span>
-	              </a>
-	              <a href="#" id="volume-button" class="nocallout" title="Adjust volume">
-	                <span id="volume-button-inner" class="ir">Volume</span>
-	              </a>
-	              <div id="volume-controls" class="gutter">
-	                <div id="volume-scrubber"></div>
-	              </div>
-	              <div id="audio-player-gutter" class="gutter">
-	                <div id="audio-player-loaded-indicator"></div>
-	                <div id="audio-player-scrubber">&nbsp;</div>
-	              </div>
-	            </div>
-	            <div id="current-track-info">
-	              <img id="current-track-artwork" class="clearfix">
-	              <p id="current-track-description"></p>
-	            </div>
-	            
-	          </div>
-	          <div id="audio-comments" class="clearfix">
-	            <header>
-	              <h6>Timed Comments</h6>
-	            </header>
-	            <ul id="audio-comment-list"></ul>
-	          </div>
-          </div>
-          <div data-role="footer">
-            <a href="http://www.soundcloud.com">
-              <span id="footer-sound-cloud-logo" class="ir">SoundCloud</span>
-            </a>
-          </div>
-        </div><!-- /#player-page -->
       </main>
 
       <script src="js/jquery/plugins/jquery.cookie.js"></script>

@@ -20,6 +20,18 @@
    * @inner
    */
   var MY_UID = '5264540';
+
+  /**
+   * The author's (Aaron L. Stephanus) Username on SoundCloud.
+   * Used as the default if the user has not previously used the app.
+   * AND selected the profile of another user then
+   * leaving the application without returning to the author's profile.
+   * @type {string}
+   * @default 'aaron-stephanus'
+   * @const
+   * @inner
+   */
+  var MY_USERNAME = 'aaron-stephanus';
   
   /**
    * The author's SoundCloud API client ID for this application.
@@ -128,16 +140,16 @@
   SCUserProfile.prototype._getSubResource = function(name) {
     var defer = $.Deferred();
     
-    // Check for cached subresource data.
+    // Check for a cached named sub-resource data.
     if (typeof(this[name]) !== 'undefined' && $.isArray(this[name])) {
       defer.resolve(this[name]);
       return defer.promise();
     }
     
-    // Add the subresource property to the SCUserProfile instance.
+    // Add the named sub-resource property to the SCUserProfile instance.
     this[name] = [];
     
-    // Perform the GET request for subresource data for 'this' user profile.
+    // Perform the GET request for sub-resource data for 'this' user profile.
     if (getSCResource('/users/' + this.id + '/' + name + '.json', {client_id: CLIENT_ID}, getResourceCallback.bind(defer, this[name]))) {
       return defer.promise();
     }
@@ -770,6 +782,7 @@
       last_profile_uid = MY_UID;
     }
 
+    
     /**
      * @method
      * @name selectProfile
@@ -813,10 +826,12 @@
       var defer = $.Deferred();
       defer.promise().done(function(data) {
       
-        $.mobile.changePage('#profile', {
+        $.mobile.changePage('/js/aarons-player/pages/profile.html', {
           allowSamePageTransitions: true,
+          dataUrl: '/profile/' + data.username,
           changeHash: true,
-          transition: 'slidedown'
+          reloadPage: true,
+          transition: 'fade'
         });
         
         // Create a new SCUserProfile object to represent
@@ -901,6 +916,7 @@
       
       if (!isInt(track_id) || track_id == 0) {
         debugLog('Invalid track ID received in playTrack method: ' + track_id);
+        return;
       }
       var track = null;
       var tracks = $scope.current_profile.tracks;
@@ -921,32 +937,33 @@
       $('#track-title').text(track.title);
       $('#track-genre').text(track.genre);
       $('#track-length').text(msToHMS(track.duration));
-      //$('#track-tags').text(removeEntities(sanitize(track.tag_list))).restrain();
-      $('#track-tags').html(splitWords(track.tag_list, '<br>'));
+      $('#track-tags').html(splitWords(sanitize(track.tag_list), '<br>'));
       
-      // Set the track's artwork, and description.
+      // Set the link to the user's profile, the track's artwork, and the track's description.
+      $('#current-track-info > a').attr('href', 'http://www.soundcloud.com/' + $scope.current_profile.permalink_url);
       $('#current-track-artwork').attr('src', track.artwork_url || track.user.avatar_url);
       $('#current-track-description').html(sanitize(track.description));
-        
-      // Open the panel, and begin streaming.
-      $('#player-panel').panel('open');
+      
+      // Enable/disable the download button depending on whether or not the
+      // track is downloadable.
+      if (track.downloadable) {
+        $('#download-track-link').button('enable');
+      } else {
+        $('#download-track-link').button('disable');
+      }
+      
       beginTrackStreaming(track_id)
         .done(function(sound) {
-          AudioController.getInstance().setSoundObject(sound).play();
-          $('#play-pause-button-inner').addClass('pause-state').removeClass('play-state');
+          
+          // Set the reference to the SMSound object in the AudioController,
+          // and instead of auto playing, apply the pulse plugin to the
+          // play-pause button, because auto-play will not work on mobile platforms.
+          AudioController.getInstance().setSoundObject(sound); //.play();
+          $('#play-pause-button').pulse('start');
+          //$('#play-pause-button-inner').addClass('pause-state').removeClass('play-state');
         })
-        .fail(function(msg) {
-          debugLog(msg);
-          // TODO: Display a modal dialog with error message.
-          // And lose the alert()!
-          alert(msg);
-        });
+        .fail(failedPromise);
     };
-    
-    //
-    // Initialize any cached user data in local storage.
-    //
-    SCUserProfileCache.getInstance().loadProfiles();
     
     //
     // Load the last/default profile.
@@ -1068,13 +1085,28 @@
     );
   }
   
+  /**
+   * Stop event propagation/bubbling.
+   * @param {Event} e
+   * @returns {Event}
+   */
   function stopEvent(e) {
-    e.preventDefault();
     if (e.stopPropagation) {
       e.stopPropagation();
     } else {
       e.cancelBubble = true;
     }
+    return e;
+  }
+  
+  /**
+   * Prevent the default action of an event.
+   * @param {Event} e
+   * @returns {Event}
+   */
+  function preventEvent(e) {
+    e.preventDefault();
+    return e;
   }
   
   /**
@@ -1503,7 +1535,6 @@
       var scrubber_pct = Math.round(scrubber_width / gutter_width * 100);
       var offset = (e.pageX - gutter.offset().left - Math.round(scrubber_width / 2));
       var pct = Math.min((100 - scrubber_pct), Math.round(offset / gutter_width * 100));
-      //scrubber.css('left', pct + '%');
       if ($.isFunction(release_callback)) {
         release_callback(pct / 100);
       }
@@ -1526,22 +1557,68 @@
     $(document).on('vmousemove', drag).one('vmouseup', release);
   }
   
+  /**
+   * @function
+   * @name currentTrackId
+   * @param {number|undefined} tid Optional track ID to set; if not provided then the current track ID is returned.
+   * @returns {number|undefined} Returns the track ID when not being set, otherwise undefiend is returned.
+   * @inner
+   */
+  var currentTrackId = (function() {
+  
+    // Enclosed track ID.
+    var track_id = 0;
+    
+    // Returned function to get/set the current track ID.
+    return function(/* optional */ tid) {
+      if (typeof(tid) === 'number' && isInt(tid)) {
+        track_id = Number(tid);
+      }
+      else {
+        return track_id;
+      }
+    };
+    
+  })();
+  
   //
   // Splash page initialization.
   //
   $(document).one('pageinit', '#splash', function(e) {
     
+    var username = null;
+    if (ProfileCtrl._scope !== null) {
+      username = ProfileCtrl._scope.current_profile.username;
+    }
+    else {
+      if (SCUserProfileCache.getInstance().getProfileCount() > 0) {
+        var last_uid = readFromCookie(PROFILE_COOKIE_NAME);
+        var profile = SCUserProfileCache.getInstance().getProfileById(last_uid); 
+        if (profile instanceof SCUserProfile) {
+          username = profile.username;
+        }
+      }
+      if (username === null) {
+        username = MY_USERNAME;
+      }
+    }
+    
     // Show the logo, rotate it and fade it out,
     // then change page to the Profile page.
     var TIMEOUT_MS = 2000;
-    var $logo = $('#splash-content > div');
-    $logo.addClass('opaque').removeClass('transparent');
+    var $logo = $('#splash-content > div:first');
+    $logo.removeClass('transparent').addClass('opaque');
     setTimeout(function() {
       $logo.addClass('rotate-out');
+      $('#splash-content > div:last').addClass('opaque');
       setTimeout(function() {
-        $.mobile.changePage('#profile', {
+        $('#splash-content > div:last').removeClass('opaque').addClass('transparent');
+        $.mobile.changePage('/js/aarons-player/pages/profile.html', {
           changeHash: true,
-          transition: 'pop'
+          dataUrl: '/profile/' + username,
+          transition: 'pop',
+          pageContainer: $('body > main'),
+          reloadPage: true
         });
       }, TIMEOUT_MS);
     }, TIMEOUT_MS);
@@ -1550,7 +1627,7 @@
   //
   // Player page initialization.
   //
-  $(document).one('pageinit', '#player', function(e) {
+  $(document).on('pageinit', '#player', function(e) {
     
     // Apply the Pulse plugin to the play/pause button.
     $('#play-pause-button').pulse({
@@ -1559,36 +1636,50 @@
       opacityMin: 0.3,
       opacityMax: 1
     });
+    ProfileCtrl._scope.playTrack(currentTrackId());
   });
   
   //
-  // Track selection event handler.
+  // Track selection event handler. Changes the page to the Player page initialized
+  // with the track data from the selected track.
   //
   $(document).on('vclick', '.playable', function(e) {
     
+    //
     // Load the Player page with the selected track,
-    // and start playing the audio.
-    stopEvent(e);
+    // and set the current track ID.
+    //
+    
+    stopEvent(preventEvent(e));
+    
     var track_id = $(this).attr('data-track-id');
-    if (!isInt(track_id)) {
+    if (!isInt(track_id) || track_id == 0) {
       debugLog('Invalid data-track-id attribute: ' + track_id);
-      return false;
+      return;
     }
-    debugLog('The selected track ID is ' + track_id);
-    $.mobile.changePage('#player', {
+    $.mobile.changePage('/js/aarons-player/pages/player.html', {
       changeHash: true,
-      transition: 'slidefade'
+      dataUrl: '/player/' + ProfileCtrl._scope.current_profile.username + '/track/' + track_id,
+      transition: 'slidefade',
+      pageContainer: $('body > main'),
+      reloadPage: true
     });
-    ProfileCtrl._scope.playTrack(track_id);
+    currentTrackId(track_id);    
   });
   
-  // Play/pause click event handler.
+  //
+  // Play/pause click event handler. Toggles between playing, and paused state.
+  //
   $(document).on('vclick', '#play-pause-button', function(e) {
-    stopEvent(e);
+    stopEvent(preventEvent(e));
     var FADE_TIME = 100;
     var $this = $(this);
     var inner = $('> span', $this);
     var audio_ctrl = AudioController.getInstance();
+    
+    // Stop the pulse plugin.
+    $this.pulse('stop');
+    
     if (inner.hasClass('play-state')) {
       audio_ctrl.play();
       $this.fadeOut(FADE_TIME, function() {
@@ -1605,13 +1696,20 @@
     }
   });
 
+  //
+  // Stop button click event. Stops audio playback.
+  //
   $(document).on('vclick', '#stop-button', function(e) {
-    stopEvent(e);
+    stopEvent(preventEvent(e));
     AudioController.getInstance().stop();
   });
   
+  //
+  // Fast forward/rewind button click events. Adjust the playback position
+  // forward/backward by several seconds. (See POSITION_DELTA within.)
+  //
   $(document).on('vclick', '#forward-button,#rewind-button', function(e) {
-    stopEvent(e);
+    stopEvent(preventEvent(e));
     var ctrl = AudioController.getInstance();
     var duration = ctrl.getDuration();
     var position = ctrl.getPosition();
@@ -1641,45 +1739,34 @@
     });
   });
   
+  //
+  // Play back position scrubber mouse down event. Begin position adjustment by dragging the scrubber.
+  // Note that the playback position does not change until mouse up.
+  //
   $(document).on('vmousedown', '#audio-player-scrubber', function(e) {
-    stopEvent(e);
+    stopEvent(preventEvent(e));
     scrubberDragListen(e, $(this), positionScrubberRelease);
   });
   
+  //
+  // Volume button click event. Show/hide the volume adjustment control.
+  //
   $(document).on('vclick', '#volume-button', function(e) {
     if (e.currentTarget.getAttribute('id') !== 'volume-button') {
       return;
     }
-    stopEvent(e);
+    stopEvent(preventEvent(e));
     $('#volume-controls').toggleClass('shown');
   });
   
-//  $(document).on('vclick', '#volume-controls', function(e) {
-//    if (e.currentTarget.getAttribute('id') !== 'volume-controls') {
-//      return;
-//    }
-//    stopEvent(e);
-//    var $this = $(this);
-//    var offset = e.pageX - parseInt($this.css('left'));
-//    var width = $this.width();
-//    var pct = Math.round(offset / width * 100);
-//    var HIDE_TIMEOUT = 2000;
-//    $('#volume-scrubber').css('left', pct + '%');
-//    AudioController.getInstance().setVolume(Math.min(100, pct));
-//    setTimeout(function() {
-//      $this.toggleClass('shown');
-//    }, HIDE_TIMEOUT);
-//  });
-//  
+  //
+  // Volume scrubber mouse down event. Begin volume change by dragging the scrubber.
+  //
   $(document).on('vmousedown', '#volume-scrubber', function(e) {
     if (e.currentTarget.getAttribute('id') !== 'volume-scrubber') {
       return;
     }
-    if (e.stopPropagation) {
-      e.stopPropagation();
-    } else {
-      e.cancelBubble = true;
-    }
+    stopEvent(e);
     scrubberDragListen(e, $(this), volumeScrubberRelease, volumeScrubberDrag);
   });
   
@@ -1687,7 +1774,7 @@
     if (e.currentTarget.getAttribute('id') !== 'audio-player-loaded-indicator') {
       return;
     }
-    stopEvent(e);
+    stopEvent(preventEvent(e));
     var gutter = $('#audio-player-gutter');
     var gutter_width = gutter.width();
     var gutter_offset = gutter.offset();
@@ -1707,10 +1794,71 @@
     });
   });
   
-  // profile selection change
-  $(document).on('vclick', 'a.friend-profile-link', function(e) {
-    stopEvent(e);
+  //
+  // Follower/Following profile selection click event.
+  // Loads the selected profile.
+  //
+  $(document).on('vclick', '.profile-selector', function(e) {
+    stopEvent(preventEvent(e));
     ProfileCtrl._scope.selectProfile($(this).attr('data-friend-id'));
   });
   
+  //
+  // Back/home link click event. Navigates from the player page
+  // back to the profile page of the current user profile.
+  //
+  $(document).on('vclick', '#back-home-link', function(e) {
+    stopEvent(preventEvent(e));
+    $.mobile.changePage('/js/aarons-player/pages/profile.html', {
+      changeHash: true,
+      dataUrl: '/profile/' + ProfileCtrl._scope.current_profile.username,
+      pageContainer: $('body > main'),
+      reloadPage: true,
+      reverse: true,
+      transition: 'slideright'
+    });
+  });
+  
+  $(document).on('swiperight', function(e) {
+    stopEvent(preventEvent(e));
+    var id = $.mobile.activePage.attr('id');
+    if (id === 'player') {
+      $.mobile.changePage('/js/aarons-player/pages/profile.html', {
+        changeHash: true,
+        dataUrl: '/profile/' + ProfileCtrl._scope.current_profile.username,
+        pageContainer: $('body > main'),
+        reloadPage: true,
+        reverse: true,
+        transition: 'slideright'
+      });
+    }
+  });
+  
+  $(document).on('swipeleft', function(e) {
+    
+    stopEvent(preventEvent(e));
+    var id = $.mobile.activePage.attr('id');
+    if (id !== 'profile') {
+      return;
+    }
+    var track_id = currentTrackId();
+    if (track_id === 0) {
+      return;
+    }
+    
+    $.mobile.changePage('/js/aarons-player/pages/player.html', {
+      changeHash: true,
+      dataUrl: '/player/' + ProfileCtrl._scope.current_profile.username + '/track/' + track_id,
+      transition: 'slidefade',
+      pageContainer: $('body > main'),
+      reloadPage: true,
+      reverse: true
+    });
+  });
+  
+  //
+  // Initialize any cached user data in local storage.
+  //
+  SCUserProfileCache.getInstance().loadProfiles();
+
 })(jQuery);

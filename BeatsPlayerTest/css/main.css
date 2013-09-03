@@ -209,6 +209,14 @@ textarea[contenteditable] {
  *
  ****************************************************************/
 
+footer {
+	text-align: center;
+}
+
+footer > * {
+	margin: 0 auto;
+}
+
 .gutter {
 	cursor: pointer;
 }
@@ -521,6 +529,14 @@ textarea[contenteditable] {
 	);
 }
 
+#footer-sound-cloud-logo {
+	background-image: url('../img/soundcloud-logo-footer.png');
+	background-repeat: no-repeat;
+	background-attachment: scroll;
+	background-position: center center;
+	background-color: transparent;
+}
+
 .disabled-button,
   .disabled-button > span
 {
@@ -664,9 +680,14 @@ main {
 
 .opaque {
 	opacity: 1;
+	-webkit-transition: opacity 2s;
+  -moz-transition: opacity 2s;
+  -ms-transition: opacity 2s;
+  -o-transition: opacity 2s;
+  transition: opacity 2s;
 }
 
-#splash-content > div {
+#splash-content > div:first-child {
 	width: 8em;
 	height: 5.375em;
   position: fixed;
@@ -675,7 +696,7 @@ main {
   margin-top: -2.1725em;
   margin-left: -4em;
   background-image: url('../img/soundcloud_logo.png');
-  background-repeat: none;
+  background-repeat: no-repeat;
   background-attachment: scroll;
   background-position: center center;
   background-color: transparent;
@@ -684,6 +705,23 @@ main {
   -ms-transition: -ms-transform 2s, width 2s, opacity 2s;
   -o-transition: -o-transform 2s, width 2s, height 2s, opacity 2s;
   transition: transform 2s, width 2s, height 2s, opacity 2s;
+}
+
+#splash-content > div:last-child {
+  width: 100%;
+  text-align: center;
+  font-size: 1.5em;
+  font-family: cursive;
+  font-weight: normal;
+  position: fixed;
+  top: 60%;
+  left: 0;
+  margin: 0;
+  -webkit-transition: opacity 2s;
+  -moz-transition: opacity 2s;
+  -o-transition: opacity 2s;
+  -ms-transition: opacity 2s;
+  transition: opacity 2s;
 }
 
 .rotate-out {
@@ -695,6 +733,11 @@ main {
   -o-transform: rotate(360deg);
   transform: rotate(360deg);
   opacity: 0;
+  -webkit-transition: -webkit-transform 2s, width 2s, height 2s, opacity 2s;
+  -moz-transition: -moz-transform 2s, width 2s, height 2s, opacity 2s;
+  -ms-transition: -ms-transform 2s, width 2s, opacity 2s;
+  -o-transition: -o-transform 2s, width 2s, height 2s, opacity 2s;
+  transition: transform 2s, width 2s, height 2s, opacity 2s;
 }
 
 #profile {
