@@ -21,6 +21,7 @@
   font-family: "Courier New", monospace;
   font-size: 0.6em;
   text-align: center;
+  line-height: 3em;
 }
 
 @media only screen and (min-width: 420px) {
@@ -31,11 +32,5 @@
 	  .ui-footer.ui-bar-e
 	{
 	  font-size: 0.8em;
-	}
-}
-
-@media only screen and (min-width: 800px) {
-	.ui-mobile [data-role="page"], .ui-mobile [data-role="dialog"], .ui-page {
-	  position: static;
 	}
 }

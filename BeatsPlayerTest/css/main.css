@@ -475,13 +475,13 @@ footer > * {
 	background-color: #333;
 	margin-top: 0.75em;
 	border-style: solid;
-	border-width: 0.2em;
+	border-width: 0.1em;
 	border-color: #333;
 	-webkit-border-radius: 0.2em;
 	-moz-border-radius: 0.2em;
 	-o-border-radius: 0.2em;
 	-ms-border-radius: 0.2em;
-	border-radius: 0.2;
+	border-radius: 0.2em;
 }
 
 #audio-player-loaded-indicator {
@@ -771,19 +771,20 @@ main {
  * 640px wide.
  */
 @media only screen and (min-width: 800px) {
-  main {
+  div[data-role="page"] {
     text-align: center;
   }
-  #profile, #player {
+  div[data-role="content"] {
     width: 640px;
     margin: 0 auto;
+    background-color: rgba(0, 0, 0, 0.25);
   }
 }
 
 /*
  * For screen min-width: 800px, and hi-res device, layout the page as full width.
  */
-@media only screen and (min-width: 800px) and (-webkit-min-device-pixel-ratio: 1.5),
+/* @media only screen and (min-width: 800px) and (-webkit-min-device-pixel-ratio: 1.5),
        only screen and (min-width: 800px) and (min-resolution: 144dpi) 
 {
   main {
@@ -794,7 +795,7 @@ main {
     margin: 0;
   }
 }
-
+ */
 /*
  * For screen min-width: 960px, and hi-res device, layout the page as a centered column
  * that is 800px wide.
@@ -802,11 +803,11 @@ main {
 @media only screen and (min-width: 960px) and (-webkit-min-device-pixel-ratio: 1.5),
        only screen and (min-width: 960px) and (min-resolution: 144dpi)
 {
-	main {
+	div[data-role="page"] {
 	  text-align: center;
 	}
-	#profile, #player {
-	  width: 800px;
+	div[data-role="content"] {
+	  width: 50em;
 	  margin: 0 auto;
 	}
 }

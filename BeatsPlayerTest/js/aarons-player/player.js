@@ -826,14 +826,14 @@
       var defer = $.Deferred();
       defer.promise().done(function(data) {
       
-        $.mobile.changePage('/js/aarons-player/pages/profile.html', {
-          allowSamePageTransitions: true,
-          dataUrl: '/profile/' + data.username,
-          changeHash: true,
-          reloadPage: true,
-          transition: 'fade'
-        });
-        
+//        $.mobile.changePage('/js/aarons-player/pages/profile.html', {
+//          allowSamePageTransitions: true,
+//          dataUrl: '/profile/' + data.username,
+//          changeHash: true,
+//          reloadPage: true,
+//          transition: 'fade'
+//        });
+//        
         // Create a new SCUserProfile object to represent
         // the loaded user profile data.
         profile = new SCUserProfile(data);
@@ -944,14 +944,6 @@
       $('#current-track-artwork').attr('src', track.artwork_url || track.user.avatar_url);
       $('#current-track-description').html(sanitize(track.description));
       
-      // Enable/disable the download button depending on whether or not the
-      // track is downloadable.
-      if (track.downloadable) {
-        $('#download-track-link').button('enable');
-      } else {
-        $('#download-track-link').button('disable');
-      }
-      
       beginTrackStreaming(track_id)
         .done(function(sound) {
           
@@ -991,6 +983,11 @@
       controller: ProfileCtrl
     });
     
+    // TODO: Refactor the player page stuff to use this...
+//    $routeProvider.when('/player/:username/track/:trackid', {
+//      templateUrl: 'js/aarons-player/tpl/player.html',
+//      controller: PlayerCtrl
+//    });
   });
   
   
@@ -1581,27 +1578,73 @@
     
   })();
   
+  /**
+   * @function
+   * @name getBaseLocation
+   * @description Return a string containing concatenated data members from the <code>window.location</code> object.
+   *              Specifically protocol, hostname, and pathname.
+   * @returns {string}
+   * @inner
+   */
+  var getBaseLocation = (function() {
+    
+    // Cached string containing the URL to return.
+    var l = window.location.protocol + '//'
+      + window.location.hostname
+      + window.location.pathname;
+    
+    return function() {
+      return l;
+    };
+  })();
+  
+  
+  /**
+   * Begins loading of the profile page.
+   * @param {string} username
+   * @param {string|undefined} transition Optional; default is 'pop'.
+   * @param {Boolean|undefined} reverse Optional; default is false.
+   */
+  function loadProfilePage(username, /* optional */ transition /* = 'pop' */, /* optional */ reverse /* = false */) {
+    
+    $.mobile.changePage('#profile', {
+      changeHash: true,
+      //dataUrl: getBaseLocation() + '/#profile/' + username,
+      pageContainer: $('body > main'),
+      //reloadPage: true,
+      //reverse: (reverse === true ? true : false),
+      transition: (typeof(transition) === 'string' && $.trim(transition) !== '' ? transition : 'pop')
+    });
+    $.mobile.navigate('#/profile/' + username, {
+      profile_username: username
+    });
+  }
+  
+  /**
+   * Begins loading of the player page.
+   * @param {string} username
+   * @param {integer} track_id
+   * @param {Boolean|undefined} reverse Optional; default is false.
+   */
+  function loadPlayerPage(username, track_id, /* optional */ reverse /* = false */) {
+    $.mobile.changePage('/js/aarons-player/pages/player.html', {
+      changeHash: true,
+      dataUrl: '/#/player/' + username + '/track/' + track_id,
+      transition: 'slidefade',
+      pageContainer: $('body > main'),
+      reloadPage: true,
+      reverse: (reverse === true ? true : false)
+    });
+//    $.mobile.navigate('/#/player/' + username + '/track/' + track_id, {
+//      profile_username: username,
+//      selected_track_id: track_id
+//    });
+  }
+  
   //
   // Splash page initialization.
   //
   $(document).one('pageinit', '#splash', function(e) {
-    
-    var username = null;
-    if (ProfileCtrl._scope !== null) {
-      username = ProfileCtrl._scope.current_profile.username;
-    }
-    else {
-      if (SCUserProfileCache.getInstance().getProfileCount() > 0) {
-        var last_uid = readFromCookie(PROFILE_COOKIE_NAME);
-        var profile = SCUserProfileCache.getInstance().getProfileById(last_uid); 
-        if (profile instanceof SCUserProfile) {
-          username = profile.username;
-        }
-      }
-      if (username === null) {
-        username = MY_USERNAME;
-      }
-    }
     
     // Show the logo, rotate it and fade it out,
     // then change page to the Profile page.
@@ -1610,15 +1653,11 @@
     $logo.removeClass('transparent').addClass('opaque');
     setTimeout(function() {
       $logo.addClass('rotate-out');
-      $('#splash-content > div:last').addClass('opaque');
       setTimeout(function() {
-        $('#splash-content > div:last').removeClass('opaque').addClass('transparent');
-        $.mobile.changePage('/js/aarons-player/pages/profile.html', {
+        $.mobile.changePage('#profile', {
           changeHash: true,
-          dataUrl: '/profile/' + username,
           transition: 'pop',
-          pageContainer: $('body > main'),
-          reloadPage: true
+          pageContainer: $('body > main')
         });
       }, TIMEOUT_MS);
     }, TIMEOUT_MS);
@@ -1627,7 +1666,7 @@
   //
   // Player page initialization.
   //
-  $(document).on('pageinit', '#player', function(e) {
+  $(document).one('pageinit', '#player', function(e) {
     
     // Apply the Pulse plugin to the play/pause button.
     $('#play-pause-button').pulse({
@@ -1636,7 +1675,26 @@
       opacityMin: 0.3,
       opacityMax: 1
     });
-    ProfileCtrl._scope.playTrack(currentTrackId());
+  });
+  
+  $(document).on('pageinit', '#player', function(e) {
+    var track_id = currentTrackId();
+    var tracks = ProfileCtrl._scope.current_profile.tracks;
+    var track = null;
+    someEls(tracks, function(el, ndx, a) {
+      if (el.id == track_id) {
+        track = el;
+        return true;
+      }
+      return false;
+    });
+    if (track !== null) {
+      if (track.downloadable === true) {
+        $('#download-track-link').button('enable');
+      } else {
+        $('#download-track-link').button('disable');
+      }
+    }
   });
   
   //
@@ -1657,14 +1715,12 @@
       debugLog('Invalid data-track-id attribute: ' + track_id);
       return;
     }
-    $.mobile.changePage('/js/aarons-player/pages/player.html', {
+    debugLog('The selected track ID is ' + track_id);
+    $.mobile.changePage('#player', {
       changeHash: true,
-      dataUrl: '/player/' + ProfileCtrl._scope.current_profile.username + '/track/' + track_id,
-      transition: 'slidefade',
-      pageContainer: $('body > main'),
-      reloadPage: true
+      transition: 'slidefade'
     });
-    currentTrackId(track_id);    
+    ProfileCtrl._scope.playTrack(track_id);
   });
   
   //
@@ -1809,28 +1865,14 @@
   //
   $(document).on('vclick', '#back-home-link', function(e) {
     stopEvent(preventEvent(e));
-    $.mobile.changePage('/js/aarons-player/pages/profile.html', {
-      changeHash: true,
-      dataUrl: '/profile/' + ProfileCtrl._scope.current_profile.username,
-      pageContainer: $('body > main'),
-      reloadPage: true,
-      reverse: true,
-      transition: 'slideright'
-    });
+    loadProfilePage(ProfileCtrl._scope.current_profile.username, 'slideright');
   });
   
   $(document).on('swiperight', function(e) {
     stopEvent(preventEvent(e));
     var id = $.mobile.activePage.attr('id');
     if (id === 'player') {
-      $.mobile.changePage('/js/aarons-player/pages/profile.html', {
-        changeHash: true,
-        dataUrl: '/profile/' + ProfileCtrl._scope.current_profile.username,
-        pageContainer: $('body > main'),
-        reloadPage: true,
-        reverse: true,
-        transition: 'slideright'
-      });
+      loadProfilePage(ProfileCtrl._scope.current_profile.username, 'slideright');
     }
   });
   
@@ -1845,20 +1887,12 @@
     if (track_id === 0) {
       return;
     }
-    
-    $.mobile.changePage('/js/aarons-player/pages/player.html', {
-      changeHash: true,
-      dataUrl: '/player/' + ProfileCtrl._scope.current_profile.username + '/track/' + track_id,
-      transition: 'slidefade',
-      pageContainer: $('body > main'),
-      reloadPage: true,
-      reverse: true
-    });
+    loadPlayerPage(ProfileCtrl._scope.current_profile.username, track_id, true);
   });
   
   //
   // Initialize any cached user data in local storage.
   //
   SCUserProfileCache.getInstance().loadProfiles();
-
+  
 })(jQuery);
